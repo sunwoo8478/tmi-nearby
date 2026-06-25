@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="반경 기반 익명 TMI·투표 모바일 웹 프로토타입" />
+    <title>TMI Nearby</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <section class="intro-panel" aria-label="프로젝트 소개">
+        <p class="eyebrow">location-based anonymous micro feed</p>
+        <h1>지금 반경 안의<br />쓸데없지만 재밌는 이야기</h1>
+        <p class="intro-copy">
+          TMI Nearby는 근처 사람들의 짧은 TMI와 양자택일 투표를 익명으로 넘겨보는 모바일 UI 프로토타입입니다.
+          원본 디자인의 어두운 글래스 무드와 라임 포인트를 유지하면서, 실제 포트폴리오 프로젝트처럼 동작하도록 다시 구성했습니다.
+        </p>
+        <div class="intro-actions">
+          <a href="#app" class="primary-link">앱 보기</a>
+          <a href="https://github.com/sunwoo8478" class="ghost-link">GitHub</a>
+        </div>
+        <dl class="metrics">
+          <div>
+            <dt>radius</dt>
+            <dd>50m</dd>
+          </div>
+          <div>
+            <dt>mode</dt>
+            <dd>anonymous</dd>
+          </div>
+          <div>
+            <dt>stack</dt>
+            <dd>vanilla</dd>
+          </div>
+        </dl>
+      </section>
+
+      <main id="app" class="phone-stage" aria-label="TMI Nearby 데모 앱">
+        <div class="device">
+          <div class="dynamic-island" aria-hidden="true"></div>
+          <div class="status-bar" aria-hidden="true">
+            <span>9:41</span>
+            <div class="status-icons">
+              <span class="signal"></span>
+              <span class="wifi"></span>
+              <span class="battery"></span>
+            </div>
+          </div>
+
+          <div class="app-screen">
+            <div class="ambient ambient-a"></div>
+            <div class="ambient ambient-b"></div>
+
+            <header class="topbar">
+              <div>
+                <p class="tiny-label">nearby</p>
+                <h2>TMI<span>.</span></h2>
+              </div>
+              <div class="live-pill" aria-live="polite">
+                <i></i>
+                <span>반경 <b id="radiusText">50m</b> · <strong id="liveCount">23명</strong></span>
+              </div>
+            </header>
+
+            <section class="tab-panel is-active" data-panel="feed" aria-label="피드">
+              <div class="card-stack" id="cardStack"></div>
+              <div class="feed-empty" id="feedEmpty" hidden>
+                <div class="radar-dot"></div>
+                <h3>근처 TMI를 다 봤어요</h3>
+                <p>새로운 이야기가 도착하면 다시 알려드릴게요.</p>
+                <button class="soft-button" id="resetFeed">처음부터 다시 보기</button>
+              </div>
+              <div class="swipe-controls">
+                <button class="round-button is-muted" id="nopeButton" aria-label="다음 카드 보기">×</button>
+                <button class="round-button is-hot" id="likeButton" aria-label="좋아요">♥</button>
+              </div>
+            </section>
+
+            <section class="tab-panel" data-panel="notifications" aria-label="알림">
+              <div class="section-title">
+                <p>notifications</p>
+                <h3>알림</h3>
+              </div>
+              <div class="notice-list" id="noticeList"></div>
+            </section>
+
+            <section class="tab-panel" data-panel="profile" aria-label="내 정보">
+              <div class="profile-head">
+                <div class="avatar">익</div>
+                <div>
+                  <p>익명의 라쿤</p>
+                  <span>24시간마다 닉네임이 바뀌어요</span>
+                </div>
+              </div>
+              <div class="profile-stats">
+                <div><strong>18</strong><span>올린 TMI</span></div>
+                <div><strong>274</strong><span>받은 반응</span></div>
+                <div><strong>7</strong><span>근처 랭크</span></div>
+              </div>
+              <div class="my-posts" id="myPosts"></div>
+            </section>
+
+            <button class="compose-fab" id="composeButton" aria-label="새 TMI 작성">+</button>
+
+            <nav class="tabbar" aria-label="하단 메뉴">
+              <button class="tab-button is-active" data-tab="feed" aria-current="page">
+                <span>⌂</span>
+                홈
+              </button>
+              <button class="tab-button" data-tab="notifications">
+                <span>◌</span>
+                알림
+              </button>
+              <button class="tab-button" data-tab="profile">
+                <span>◎</span>
+                내 정보
+              </button>
+            </nav>
+          </div>
+          <div class="home-indicator" aria-hidden="true"></div>
+        </div>
+      </main>
+    </div>
+
+    <dialog class="sheet" id="detailSheet" aria-labelledby="detailTitle">
+      <form method="dialog">
+        <button class="sheet-close" aria-label="닫기">×</button>
+      </form>
+      <div class="sheet-body" id="detailBody"></div>
+    </dialog>
+
+    <dialog class="sheet" id="composeSheet" aria-labelledby="composeTitle">
+      <form method="dialog">
+        <button class="sheet-close" aria-label="닫기">×</button>
+      </form>
+      <div class="compose-body">
+        <p class="tiny-label">new post</p>
+        <h3 id="composeTitle">근처에 남길 TMI</h3>
+        <textarea id="composeInput" maxlength="90" placeholder="방금 일어난 쓸데없지만 말하고 싶은 일..."></textarea>
+        <div class="compose-row">
+          <button class="type-chip is-selected" data-compose-type="tmi">TMI</button>
+          <button class="type-chip" data-compose-type="vote">투표</button>
+        </div>
+        <button class="submit-button" id="submitCompose">반경 안에 띄우기</button>
+      </div>
+    </dialog>
+
+    <script src="./src/app.js" type="module"></script>
+  </body>
+</html>
