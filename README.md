@@ -1,25 +1,98 @@
 # TMI Nearby
 
 반경 안의 짧은 TMI와 양자택일 투표를 익명으로 넘겨보는 모바일 웹 프로토타입입니다.  
-원본 디자인의 어두운 글래스 무드와 라임 포인트를 유지하면서, GitHub에 올릴 수 있는 실행형 프론트 프로젝트로 정리했습니다.
+같은 공간에 있지만 서로 말을 걸기는 애매한 순간, 아주 가볍게 주변의 분위기와 이야기를 볼 수 있는 앱을 상상했습니다.
 
-![TMI Nearby feed](./assets/shots/feed.png)
+![TMI Nearby cover](./assets/readme-cover.svg)
 
-## 핵심 컨셉
+[![CI](https://github.com/sunwoo8478/tmi-nearby/actions/workflows/ci.yml/badge.svg)](https://github.com/sunwoo8478/tmi-nearby/actions/workflows/ci.yml)
+![Static](https://img.shields.io/badge/static-HTML%20%2B%20CSS%20%2B%20JS-111111?style=flat-square)
+![Mobile UI](https://img.shields.io/badge/mobile%20ui-dark%20glass-111111?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-111111?style=flat-square)
 
-| 구분 | 설명 |
+## 프로젝트 한 줄 소개
+
+TMI Nearby는 “지금 내 주변 사람들은 무슨 쓸데없는 생각을 하고 있을까?”에서 시작한 위치 기반 익명 마이크로 피드입니다.  
+반경 안의 익명 카드들을 넘겨보고, 마음에 들면 반응하고, 댓글을 남기거나 직접 TMI/투표를 올릴 수 있습니다.
+
+## 왜 만들었나
+
+일반 SNS는 너무 넓고, 지역 커뮤니티는 너무 무겁습니다.  
+이 프로젝트는 같은 카페, 학교, 회사, 행사장처럼 “같은 공간에 있는 사람들” 사이에서만 통하는 가벼운 이야기를 다루는 서비스를 가정했습니다.
+
+| 문제 | 접근 |
 | --- | --- |
-| Feed | 반경 안의 익명 TMI와 투표 카드를 스택 형태로 탐색 |
-| Interaction | 좋아요/넘기기, 댓글 보기, 투표 선택 |
-| Compose | TMI 또는 투표 형식으로 새 글 작성 |
-| Tabs | 홈, 알림, 내 정보 화면 구성 |
-| Mood | iOS 스타일 디바이스 프레임, 다크 글래스, 라임 액센트 |
+| 실명 커뮤니티는 부담스럽다 | 매일 바뀌는 익명 닉네임을 전제로 설계 |
+| 일반 SNS는 맥락이 너무 넓다 | 반경 기반으로 가까운 글만 보여주는 컨셉 |
+| 긴 글은 피로하다 | 카드 한 장에 짧은 TMI 또는 투표만 표시 |
+| 댓글은 필요하지만 화면을 깨면 안 된다 | 하단 시트 형태로 상세/댓글을 분리 |
+| 포트폴리오에서 바로 보여야 한다 | 의존성 없는 정적 앱으로 실행 가능하게 구성 |
 
-## 화면
+## 디자인 미리보기
 
-| Feed | Detail |
+| Feed | Detail / Comments |
 | --- | --- |
 | ![feed](./assets/shots/feed.png) | ![detail](./assets/shots/detail.png) |
+
+| Comments view | App mood |
+| --- | --- |
+| ![comments](./assets/shots/comments.png) | ![cover](./assets/readme-cover.svg) |
+
+## 핵심 기능
+
+| 기능 | 설명 |
+| --- | --- |
+| Nearby card feed | 반경 안의 익명 TMI와 투표를 카드 스택으로 표시 |
+| Like / Nope | 카드를 빠르게 넘기거나 좋아요 처리 |
+| Vote card | “A vs B” 형태의 가벼운 양자택일 투표 |
+| Comment sheet | 글의 맥락을 유지한 채 하단 시트로 댓글 확인 |
+| Compose sheet | TMI 또는 투표 형식으로 새 글 작성 |
+| Notifications | 주변 반응, 댓글, 새 투표 알림 화면 |
+| Profile | 익명 프로필, 활동 수치, 내가 올린 글 확인 |
+
+## 사용자 흐름
+
+```text
+앱 진입
+  → 반경 50m 안의 TMI 카드 확인
+  → 좋아요 또는 넘기기
+  → 궁금한 글은 댓글 시트 열기
+  → 직접 TMI 또는 투표 작성
+  → 알림과 내 활동 확인
+```
+
+## 디자인 방향
+
+이 프로젝트는 밝고 귀여운 커뮤니티 앱보다, 밤에 켜도 부담 없는 어두운 모바일 피드에 가깝게 잡았습니다.
+
+| 요소 | 의도 |
+| --- | --- |
+| Dark glass | 익명성과 야간 사용감을 살리는 어두운 배경 |
+| Lime accent | 실시간 반경, 좋아요, 작성 버튼을 한 번에 인지 |
+| iOS device frame | 모바일 앱 프로토타입이라는 맥락을 즉시 전달 |
+| Card stack | “근처 이야기들을 넘겨본다”는 행동을 시각화 |
+| Bottom sheet | 댓글/작성 화면이 피드를 완전히 끊지 않도록 설계 |
+| Short copy | 사용자가 길게 읽기보다 빠르게 훑는 경험을 우선 |
+
+## 구현 포인트
+
+- 프레임워크 없이 HTML, CSS, JavaScript만으로 구성했습니다.
+- GitHub Pages에 바로 올릴 수 있는 정적 구조입니다.
+- 카드 데이터와 인터랙션은 `src/app.js`에서 mock data 기반으로 동작합니다.
+- CSS만으로 iOS 스타일 디바이스 프레임, 글래스 카드, 하단 탭, 모달 시트를 구성했습니다.
+- 작성 모달에서 새 TMI를 추가하면 카드 스택 최상단에 바로 반영됩니다.
+- 알림 탭과 내 정보 탭을 별도 패널로 분리했습니다.
+
+## 기술 스택
+
+| 영역 | 사용 |
+| --- | --- |
+| Markup | HTML |
+| Style | CSS, responsive layout, glassmorphism |
+| Interaction | Vanilla JavaScript |
+| Assets | SVG favicon, README cover, screenshot assets |
+| CI | GitHub Actions, `node --check` |
+| Deploy target | GitHub Pages compatible static app |
 
 ## 실행 방법
 
@@ -52,6 +125,8 @@ npm run check
 │   ├── app.js
 │   └── styles.css
 ├── assets/
+│   ├── favicon.svg
+│   ├── readme-cover.svg
 │   └── shots/
 ├── .github/
 │   └── workflows/
@@ -60,14 +135,16 @@ npm run check
     └── ROADMAP.md
 ```
 
-## 구현 메모
+## 앞으로 붙이면 좋은 기능
 
-- 별도 프레임워크 없이 HTML, CSS, JavaScript로 구성했습니다.
-- GitHub Pages에 바로 배포할 수 있는 정적 구조입니다.
-- 카드 데이터는 `src/app.js` 안의 mock data로 관리합니다.
-- 추후 위치 권한, WebSocket, Supabase/Firebase, 신고/차단 기능을 붙일 수 있습니다.
+- 위치 권한 기반 실제 반경 계산
+- WebSocket 기반 실시간 카드 수신
+- Supabase/Firebase 기반 익명 세션
+- 신고, 숨김, 차단, 민감어 필터링
+- PWA 설치 지원
+- 카드 드래그 스와이프 애니메이션
 
-## 다음 단계
+## 문서
 
 - [Product Notes](./docs/PRODUCT.md)
 - [Roadmap](./docs/ROADMAP.md)
