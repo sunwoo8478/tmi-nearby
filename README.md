@@ -53,8 +53,11 @@ npm run check
 │   └── styles.css
 ├── assets/
 │   └── shots/
+├── .github/
+│   └── workflows/
 └── docs/
-    └── PRODUCT.md
+    ├── PRODUCT.md
+    └── ROADMAP.md
 ```
 
 ## 구현 메모
