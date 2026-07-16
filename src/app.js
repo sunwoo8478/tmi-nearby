@@ -1,77 +1,89 @@
-const posts = [
-  {
-    id: 1,
-    type: "tmi",
-    who: "익명의 사과",
-    distance: "4m",
-    text: "앞에 앉은 분 후드티 어디 거예요? 진짜 예뻐서 그래요",
-    comments: [
-      ["익명의 복숭아 · 6m", "저도 그거 궁금했어요 ㅋㅋ"],
-      ["익명의 너구리 · 2m", "무신사에서 산 것 같은데"],
-    ],
-    reactions: ["😳 8", "👏 5", "😂 3", "🔥 12", "🤔 2"],
-    watching: 27,
-  },
-  {
-    id: 2,
-    type: "vote",
-    who: "익명의 고양이",
-    distance: "11m",
-    text: "지금 카페에서 집중 안 될 때 더 나은 선택은?",
-    options: [
-      { label: "자리 옮기기", pct: 62 },
-      { label: "음료 하나 더", pct: 38 },
-    ],
-    comments: [["익명의 감자 · 9m", "자리 옮기기가 답"], ["익명의 바다 · 12m", "커피 리필은 위험함"]],
-    reactions: ["☕ 9", "👀 4", "🫠 6"],
-    watching: 19,
-  },
-  {
-    id: 3,
-    type: "tmi",
-    who: "익명의 라임",
-    distance: "18m",
-    text: "방금 계산대에서 카드 거꾸로 꽂고 5초 동안 기계랑 눈싸움함",
-    comments: [["익명의 밤 · 14m", "나만 그런 게 아니었네"], ["익명의 새우 · 16m", "기계도 당황했을 듯"]],
-    reactions: ["😂 14", "💳 3", "🥲 7"],
-    watching: 31,
-  },
-  {
-    id: 4,
-    type: "vote",
-    who: "익명의 두더지",
-    distance: "23m",
-    text: "엘리베이터에서 아는 사람 만났을 때",
-    options: [
-      { label: "먼저 인사", pct: 41 },
-      { label: "폰 보는 척", pct: 59 },
-    ],
-    comments: [["익명의 별 · 20m", "폰 보는 척 너무 현실"], ["익명의 연필 · 21m", "인사하면 마음 편함"]],
-    reactions: ["📱 16", "🙃 8"],
-    watching: 22,
-  },
-];
+import { posts, notices, myPosts } from "./data.js";
 
-const notices = [
-  ["♥", "내 TMI가 근처에서 12개의 반응을 받았어요", "방금 전"],
-  ["💬", "익명의 복숭아가 댓글을 남겼어요", "3분 전"],
-  ["📍", "반경 50m 안에 새 투표가 올라왔어요", "8분 전"],
-  ["🔥", "지금 주변에서 가장 많이 본 TMI가 있어요", "14분 전"],
-];
+const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
+const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
 
-const myPosts = [
-  ["TMI", "아침에 산 커피 아직도 반 남음. 이 정도면 장식품이다.", "12분 전", "24", "5", "81"],
-  ["투표", "점심 메뉴 고르는 데 20분 넘으면 이미 진 거 아닌가요?", "어제", "39", "11", "146"],
-];
-
-let feed = [...posts];
+let userPosts = loadUserPosts();
+let hiddenIds = loadHiddenIds();
+let feed = createFeed();
 let composeType = "tmi";
+
+const DRAG_THRESHOLD = 100;
+let dragState = null;
+let isShifting = false;
+
+const COMPOSE_COOLDOWN_MS = 10000;
+const BAD_WORDS = ["시발", "씨발", "병신", "개새", "좆", "fuck", "shit"];
+const PHONE_PATTERN = /\b0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}\b/;
+
+let lastComposeTime = 0;
+let composeWarnTimer = null;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 const cardStack = $("#cardStack");
 const feedEmpty = $("#feedEmpty");
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[ch]));
+}
+
+function isValidUserPost(post) {
+  return post
+    && typeof post.id !== "undefined"
+    && typeof post.who === "string"
+    && typeof post.text === "string"
+    && Array.isArray(post.comments)
+    && Array.isArray(post.reactions);
+}
+
+function loadUserPosts() {
+  try {
+    const value = localStorage.getItem(USER_POSTS_STORAGE_KEY);
+    const parsed = value ? JSON.parse(value) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isValidUserPost).sort((a, b) => Number(b.id) - Number(a.id));
+  } catch {
+    return [];
+  }
+}
+
+function saveUserPosts() {
+  try {
+    localStorage.setItem(USER_POSTS_STORAGE_KEY, JSON.stringify(userPosts));
+  } catch {
+    // localStorage 사용 불가(프라이빗 모드, 용량 초과 등) 시 조용히 무시
+  }
+}
+
+function loadHiddenIds() {
+  try {
+    const value = localStorage.getItem(HIDDEN_IDS_STORAGE_KEY);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id !== "undefined") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHiddenIds() {
+  try {
+    localStorage.setItem(HIDDEN_IDS_STORAGE_KEY, JSON.stringify(hiddenIds));
+  } catch {
+    // localStorage 사용 불가 시 조용히 무시
+  }
+}
+
+function createFeed() {
+  return [...userPosts, ...posts].filter((post) => !hiddenIds.includes(post.id));
+}
 
 function renderFeed() {
   cardStack.innerHTML = "";
@@ -93,15 +105,19 @@ function renderFeed() {
         </div>
         <button class="more-button" aria-label="게시물 메뉴">⋯</button>
       </div>
-      <div class="card-text">${post.text}</div>
+      <div class="card-text">${escapeHtml(post.text)}</div>
       ${post.type === "vote" ? voteMarkup(post) : ""}
       <div class="card-bottom">
         <button class="comment-button" data-open-detail="${post.id}">💬 댓글 ${post.comments.length}</button>
         <span class="watching">👀 ${post.watching}명</span>
       </div>
+      <div class="swipe-stamp stamp-like" aria-hidden="true">LIKE</div>
+      <div class="swipe-stamp stamp-nope" aria-hidden="true">NOPE</div>
     `;
     cardStack.append(card);
   });
+
+  bindCardDrag();
 }
 
 function voteMarkup(post) {
@@ -118,20 +134,146 @@ function voteMarkup(post) {
   `;
 }
 
-function shiftCard(direction = "like") {
-  if (!feed.length) return;
-  const first = $(".tmi-card");
-  if (first) {
-    first.style.transform = direction === "like"
+function bindCardDrag() {
+  const card = cardStack.firstElementChild;
+  if (!card) return;
+  card.addEventListener("pointerdown", onDragStart);
+}
+
+function onDragStart(event) {
+  if (event.button !== 0 || !event.isPrimary) return;
+  if (event.target.closest(".more-button, .comment-button, .vote-option, .card-menu")) return;
+  const card = event.currentTarget;
+  card.setPointerCapture(event.pointerId);
+  dragState = { card, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, dx: 0, moved: false, horizontal: null };
+  card.addEventListener("pointermove", onDragMove);
+  card.addEventListener("pointerup", onDragEnd);
+  card.addEventListener("pointercancel", onDragEnd);
+}
+
+function onDragMove(event) {
+  if (!dragState || event.pointerId !== dragState.pointerId) return;
+  const dx = event.clientX - dragState.startX;
+  const dy = event.clientY - dragState.startY;
+
+  if (dragState.horizontal === null) {
+    if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+    dragState.horizontal = Math.abs(dx) > Math.abs(dy);
+    if (dragState.horizontal) dragState.card.classList.add("is-dragging");
+  }
+  if (!dragState.horizontal) return;
+
+  event.preventDefault();
+  dragState.moved = true;
+  dragState.dx = dx;
+
+  const { card } = dragState;
+  card.style.transform = `translate(${dx}px, ${dy * 0.35}px) rotate(${dx / 18}deg)`;
+
+  const ratio = Math.min(Math.abs(dx) / DRAG_THRESHOLD, 1);
+  card.querySelector(".stamp-like").style.opacity = dx > 0 ? String(ratio) : "0";
+  card.querySelector(".stamp-nope").style.opacity = dx < 0 ? String(ratio) : "0";
+}
+
+function onDragEnd(event) {
+  if (!dragState || event.pointerId !== dragState.pointerId) return;
+  const { card, dx, moved } = dragState;
+  card.releasePointerCapture(event.pointerId);
+  card.classList.remove("is-dragging");
+  card.removeEventListener("pointermove", onDragMove);
+  card.removeEventListener("pointerup", onDragEnd);
+  card.removeEventListener("pointercancel", onDragEnd);
+  dragState = null;
+
+  if (moved && Math.abs(dx) > DRAG_THRESHOLD) {
+    shiftCard(dx > 0 ? "like" : "nope", card);
+    return;
+  }
+
+  card.style.transform = "";
+  card.querySelector(".stamp-like").style.opacity = "0";
+  card.querySelector(".stamp-nope").style.opacity = "0";
+}
+
+function shiftCard(direction = "like", card = $(".tmi-card")) {
+  if (!feed.length || isShifting) return;
+  isShifting = true;
+  if (card) {
+    card.style.transform = direction === "like"
       ? "translateX(130px) rotate(12deg)"
       : "translateX(-130px) rotate(-12deg)";
-    first.style.opacity = "0";
+    card.style.opacity = "0";
   }
   setTimeout(() => {
     feed.shift();
     renderFeed();
     updateLiveCount();
+    isShifting = false;
   }, 180);
+}
+
+function openCardMenu(button) {
+  closeCardMenu();
+  const card = button.closest(".tmi-card");
+  if (!card) return;
+  const id = card.dataset.id;
+
+  const menu = document.createElement("div");
+  menu.className = "card-menu";
+  menu.dataset.cardMenu = "1";
+  menu.innerHTML = `
+    <button type="button" data-action="hide">숨기기</button>
+    <button type="button" data-action="report">신고하기</button>
+  `;
+
+  menu.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-action]");
+    if (!target) return;
+    event.stopPropagation();
+    const action = target.dataset.action;
+    closeCardMenu();
+    if (action === "hide") hidePost(id);
+    else if (action === "report") showToast("신고가 접수됐어요");
+  });
+
+  button.parentElement.style.position = "relative";
+  button.parentElement.append(menu);
+  document.addEventListener("pointerdown", onCardMenuOutside, true);
+}
+
+function closeCardMenu() {
+  $$(".card-menu").forEach((menu) => menu.remove());
+  document.removeEventListener("pointerdown", onCardMenuOutside, true);
+}
+
+function onCardMenuOutside(event) {
+  if (event.target.closest(".card-menu, .more-button")) return;
+  closeCardMenu();
+}
+
+function hidePost(id) {
+  const postId = Number(id);
+  if (!hiddenIds.includes(postId)) {
+    hiddenIds.push(postId);
+    saveHiddenIds();
+  }
+  feed = feed.filter((post) => post.id !== postId);
+  renderFeed();
+}
+
+function showToast(message) {
+  const existing = $("#cardToast");
+  if (existing) existing.remove();
+  const toast = document.createElement("div");
+  toast.id = "cardToast";
+  toast.className = "card-toast";
+  toast.textContent = message;
+  $(".app-screen").append(toast);
+  toast.classList.add("is-visible");
+  setTimeout(() => {
+    toast.classList.remove("is-visible");
+    toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+  }, 1600);
 }
 
 function updateLiveCount() {
@@ -151,12 +293,25 @@ function renderNotices() {
   `).join("");
 }
 
+function sumReactions(reactions) {
+  return reactions.reduce((total, reaction) => total + Number(reaction.match(/\d+/)?.[0] ?? 0), 0);
+}
+
 function renderMyPosts() {
-  $("#myPosts").innerHTML = myPosts.map(([tag, text, time, hearts, comments, views]) => `
+  const userEntries = userPosts.map((post) => [
+    post.type === "vote" ? "투표" : "TMI",
+    post.text,
+    "방금 전",
+    String(sumReactions(post.reactions)),
+    String(post.comments.length),
+    String(post.watching),
+  ]);
+
+  $("#myPosts").innerHTML = [...userEntries, ...myPosts].map(([tag, text, time, hearts, comments, views]) => `
     <article class="post-card">
       <div>
         <span>${tag} · ${time}</span>
-        <strong>${text}</strong>
+        <strong>${escapeHtml(text)}</strong>
         <span>♥ ${hearts} · 💬 ${comments} · 👀 ${views}</span>
       </div>
     </article>
@@ -164,11 +319,12 @@ function renderMyPosts() {
 }
 
 function openDetail(id) {
-  const post = posts.find((item) => item.id === Number(id)) || feed[0];
+  const postId = Number(id);
+  const post = feed.find((item) => item.id === postId) || userPosts.find((item) => item.id === postId) || posts.find((item) => item.id === postId) || feed[0];
   if (!post) return;
   $("#detailBody").innerHTML = `
     <p class="tiny-label">${post.who} · ${post.distance}</p>
-    <h3 id="detailTitle" class="sheet-title">${post.text}</h3>
+    <h3 id="detailTitle" class="sheet-title">${escapeHtml(post.text)}</h3>
     <div class="reaction-row">${post.reactions.map((reaction) => `<span>${reaction}</span>`).join("")}</div>
     <div class="comment-list">
       ${post.comments.map(([who, text]) => `
@@ -187,12 +343,39 @@ function openCompose() {
   $("#composeInput").focus();
 }
 
+function showComposeWarn(message) {
+  const warn = $("#composeWarn");
+  warn.textContent = message;
+  warn.hidden = false;
+  clearTimeout(composeWarnTimer);
+  composeWarnTimer = setTimeout(() => { warn.hidden = true; }, 3000);
+}
+
 function submitCompose(event) {
   event.preventDefault();
   const value = $("#composeInput").value.trim();
   if (!value) return;
+
+  const now = Date.now();
+  const elapsed = now - lastComposeTime;
+  if (lastComposeTime && elapsed < COMPOSE_COOLDOWN_MS) {
+    showComposeWarn(`잠시 후 다시 시도해주세요 (${Math.ceil((COMPOSE_COOLDOWN_MS - elapsed) / 1000)}초)`);
+    return;
+  }
+
+  const lower = value.toLowerCase();
+  if (BAD_WORDS.some((word) => lower.includes(word))) {
+    showComposeWarn("부적절한 표현이 포함되어 있어요. 다시 작성해주세요.");
+    return;
+  }
+  if (PHONE_PATTERN.test(value)) {
+    showComposeWarn("전화번호 등 개인정보는 공유할 수 없어요.");
+    return;
+  }
+
+  lastComposeTime = now;
   const item = {
-    id: Date.now(),
+    id: now,
     type: composeType,
     who: "익명의 라쿤",
     distance: "0m",
@@ -203,10 +386,13 @@ function submitCompose(event) {
     watching: 1,
   };
   feed.unshift(item);
-  posts.unshift(item);
+  userPosts.unshift(item);
+  saveUserPosts();
   $("#composeInput").value = "";
+  $("#composeWarn").hidden = true;
   $("#composeSheet").close();
   renderFeed();
+  renderMyPosts();
   switchTab("feed");
 }
 
@@ -226,12 +412,25 @@ function bindEvents() {
   $("#likeButton").addEventListener("click", () => shiftCard("like"));
   $("#nopeButton").addEventListener("click", () => shiftCard("nope"));
   $("#resetFeed").addEventListener("click", () => {
-    feed = [...posts];
+    feed = createFeed();
     renderFeed();
   });
   $("#composeButton").addEventListener("click", openCompose);
   $("#submitCompose").addEventListener("click", submitCompose);
+  $("#composeInput").addEventListener("input", () => {
+    const warn = $("#composeWarn");
+    if (!warn.hidden) {
+      warn.hidden = true;
+      clearTimeout(composeWarnTimer);
+    }
+  });
   cardStack.addEventListener("click", (event) => {
+    const moreButton = event.target.closest(".more-button");
+    if (moreButton) {
+      event.stopPropagation();
+      openCardMenu(moreButton);
+      return;
+    }
     const target = event.target.closest("[data-open-detail]");
     if (target) openDetail(target.dataset.openDetail);
   });

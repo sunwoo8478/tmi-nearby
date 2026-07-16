@@ -1,0 +1,15 @@
+{
+  "name": "TMI Nearby",
+  "short_name": "TMI Nearby",
+  "theme_color": "#ccff00",
+  "background_color": "#050507",
+  "display": "standalone",
+  "start_url": ".",
+  "icons": [
+    {
+      "src": "./assets/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}

@@ -5,8 +5,9 @@
   "description": "반경 기반 익명 TMI·투표 모바일 웹 프로토타입",
   "type": "module",
   "scripts": {
-    "dev": "python3 -m http.server 5173",
-    "check": "node --check src/app.js"
+    "dev": "python3.12 -m http.server 5173",
+    "check": "node --check src/app.js",
+    "cn:glm": "/Users/sw/.npm-global/bin/cn --config ./continue-glm.yaml"
   },
   "keywords": [
     "frontend",

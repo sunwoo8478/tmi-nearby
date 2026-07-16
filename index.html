@@ -2,10 +2,15 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="반경 기반 익명 TMI·투표 모바일 웹 프로토타입" />
+    <meta name="theme-color" content="#ccff00" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>TMI Nearby</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./assets/favicon.svg" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./src/styles.css" />
@@ -141,6 +146,7 @@
         <p class="tiny-label">new post</p>
         <h3 id="composeTitle">근처에 남길 TMI</h3>
         <textarea id="composeInput" maxlength="90" placeholder="방금 일어난 쓸데없지만 말하고 싶은 일..."></textarea>
+        <p class="compose-warn" id="composeWarn" role="alert" hidden></p>
         <div class="compose-row">
           <button class="type-chip is-selected" data-compose-type="tmi">TMI</button>
           <button class="type-chip" data-compose-type="vote">투표</button>

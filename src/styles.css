@@ -364,6 +364,38 @@ button {
   backdrop-filter: blur(26px);
   transform-origin: 50% 90%;
   transition: transform 0.25s ease, opacity 0.25s ease;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.tmi-card.is-dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.swipe-stamp {
+  position: absolute;
+  top: 96px;
+  padding: 6px 14px;
+  border: 3px solid currentColor;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stamp-like {
+  left: 22px;
+  color: var(--lime);
+  transform: rotate(-16deg);
+}
+
+.stamp-nope {
+  right: 22px;
+  color: #ff5c5c;
+  transform: rotate(16deg);
 }
 
 .tmi-card:nth-child(2) {
@@ -418,6 +450,61 @@ button {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   color: var(--muted);
+}
+
+.card-menu {
+  position: absolute;
+  z-index: 8;
+  top: 34px;
+  right: 0;
+  min-width: 120px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(12, 12, 15, 0.96);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+}
+
+.card-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.card-menu button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.card-toast {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  bottom: 132px;
+  transform: translateX(-50%) translateY(12px);
+  padding: 12px 20px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(12, 12, 15, 0.96);
+  backdrop-filter: blur(18px);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.card-toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .card-text {
@@ -762,11 +849,45 @@ button {
   color: #fff;
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.58);
   backdrop-filter: blur(30px);
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 0.22s ease,
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    overlay 0.28s allow-discrete,
+    display 0.28s allow-discrete;
+}
+
+.sheet[open] {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .sheet::backdrop {
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0);
+  transition:
+    background 0.22s ease,
+    backdrop-filter 0.28s ease,
+    overlay 0.28s allow-discrete,
+    display 0.28s allow-discrete;
+}
+
+.sheet[open]::backdrop {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(8px);
+}
+
+@starting-style {
+  .sheet[open] {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  .sheet[open]::backdrop {
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0);
+  }
 }
 
 .sheet-close {
@@ -855,6 +976,18 @@ textarea:focus {
   border-color: rgba(204, 255, 0, 0.6);
 }
 
+.compose-warn {
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 92, 92, 0.14);
+  border: 1px solid rgba(255, 92, 92, 0.4);
+  color: #ff8a8a;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .compose-row {
   display: flex;
   gap: 8px;
@@ -926,5 +1059,43 @@ textarea:focus {
     width: 100vw;
     height: 100dvh;
     border-radius: 0;
+  }
+
+  .dynamic-island {
+    top: calc(12px + env(safe-area-inset-top));
+  }
+
+  .status-bar {
+    height: calc(58px + env(safe-area-inset-top));
+    padding-top: calc(18px + env(safe-area-inset-top));
+  }
+
+  .compose-fab {
+    bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+
+  .tabbar {
+    padding-bottom: calc(34px + env(safe-area-inset-bottom));
+  }
+
+  .home-indicator {
+    bottom: calc(9px + env(safe-area-inset-bottom));
+  }
+
+  .sheet {
+    margin-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .sheet-body,
+  .compose-body {
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet::backdrop,
+  .tmi-card {
+    transition-duration: 0.01ms;
   }
 }
