@@ -1,4 +1,5 @@
 import { posts, notices, myPosts } from "./data.js";
+import { getCurrentPosition, haversineDistanceMeters, formatDistanceMeters, assignNearbyCoordinate } from "./geo.js";
 
 const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
 const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
@@ -517,7 +518,22 @@ function bindEvents() {
   });
 }
 
+function initGeoDistances() {
+  getCurrentPosition()
+    .then(({ lat, lng }) => {
+      for (const post of [...posts, ...userPosts]) {
+        if (post._coords) continue;
+        const { lat: pLat, lng: pLng } = assignNearbyCoordinate(lat, lng, 50);
+        post._coords = { lat: pLat, lng: pLng };
+        post.distance = formatDistanceMeters(haversineDistanceMeters(lat, lng, pLat, pLng));
+      }
+      renderFeed();
+    })
+    .catch(() => {});
+}
+
 renderFeed();
 renderNotices();
 renderMyPosts();
 bindEvents();
+initGeoDistances();
