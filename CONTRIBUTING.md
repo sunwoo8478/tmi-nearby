@@ -9,6 +9,27 @@
 - 기능을 추가할 때는 `src/app.js`의 UI 흐름과 `src/data.js`의 mock data 구조를 깨지 않게 유지합니다.
 - 순수 로직은 가능하면 `src/geo.js`, `src/utils.js`처럼 별도 모듈로 분리하고 테스트를 같이 추가합니다.
 
+## 순수 검증/유효성 로직 분리 가이드
+
+검증·유효성·계산 등 DOM이나 `localStorage`에 의존하지 않는 순수 로직은 `src/utils.js`에 `export` 함수로 추가하고, `src/utils.test.mjs`에 단위 테스트를 함께 작성합니다. `src/app.js`에서는 해당 함수를 import해 호출만 담당하고, 상수(예: 금지어 목록, 전화번호 정규식, 쿨다운 시간)는 인자로 주입해 테스트 격리성을 유지합니다.
+
+### 최근 적용 사례
+
+`c47eb98 refactor: 글쓰기 검증 로직을 utils.js 순수 함수로 분리`에서 아래 함수들을 `src/app.js`의 인라인 검증에서 `src/utils.js`로 옮겼습니다.
+
+| 함수 | 역할 | app.js에서 주입하는 인자 |
+| --- | --- | --- |
+| `getComposeCooldownRemainingMs(lastComposeTime, now, cooldownMs)` | 중복 작성 방지 쿨다운 잔여 시간(ms) 반환, 0이면 허용 | `lastComposeTime`, `Date.now()`, `COMPOSE_COOLDOWN_MS` |
+| `containsBadWord(text, badWords)` | 금지어 포함 여부 | 작성/댓글 텍스트, `BAD_WORDS` 배열 |
+| `containsPhoneNumber(text, phonePattern)` | 전화번호 패턴 포함 여부 | 텍스트, `PHONE_PATTERN` 정규식 |
+
+이 패턴을 따르면:
+- `node --test`로 브라우저 환경 없이 검증 로직만 단독 테스트 가능합니다.
+- 상수를 인자로 주입하므로 테스트에서 임의 값/엣지 케이스를 자유롭게 검증할 수 있습니다.
+- `src/app.js`는 UI 부작용(토스트, 필드 초기화 등)만 남기고 검증 조건은 utils에 위임합니다.
+
+새 검증 로직을 추가할 때도 같은 흐름을 따라주세요: 1) `src/utils.js`에 JSDoc과 함께 export 함수 작성, 2) `src/utils.test.mjs`에 케이스 추가, 3) `src/app.js`에서 import해 사용.
+
 ## 프로젝트 구조
 
 | 파일 | 역할 |
