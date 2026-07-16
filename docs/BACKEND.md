@@ -2,6 +2,8 @@
 
 TMI Nearby가 정적 프로토타입에서 실제 서비스로 확장된다면, 현재의 mock data와 localStorage 상태는 익명 세션 기반 API와 데이터베이스로 이동합니다. 이 문서는 `users`, `posts`, `votes`, `locations` 후보 구조를 기준으로 필요한 백엔드 API를 정리합니다.
 
+> 이 문서의 엔드포인트는 현재 프론트엔드(`src/app.js`)에서 localStorage로 구현된 기능을 서버로 옮길 때의 설계입니다. 클라이언트의 실제 키 이름과 동작(차단·숨김·신고·닉네임 회전)과 일치하도록 맞춰져 있습니다.
+
 ## 기본 방향
 
 | 항목 | 설계 |
@@ -27,6 +29,8 @@ locations
   └─ radius_visibility
 ```
 
+> 개인 피드 상태(숨김/차단/신고 누적)는 `anonymous_sessions` 하위에 저장합니다. 현재 프론트엔드 localStorage 키와 대응: `hiddenIds`(숨긴 게시물 ID), `blockedAuthors`(차단한 작성자 닉네임), `reportedIds`(신고한 게시물 ID). 닉네임 회전 상태(`{ name, assignedAt }`, TTL 24h)도 세션에 보관합니다.
+
 ## 인증 방식
 
 익명 세션 발급 후 모든 쓰기 API는 세션 토큰을 헤더로 보냅니다. 토큰은 사용자 식별 대신 기기 단위의 임시 익명성을 유지하는 용도로만 사용합니다.
@@ -39,8 +43,10 @@ Authorization: Bearer <anonymous_session_token>
 | --- | --- |
 | `sessionId` | 서버 내부 익명 세션 ID |
 | `token` | 클라이언트가 보관하는 세션 토큰 |
-| `nickname` | 하루 단위로 회전 가능한 익명 닉네임 |
-| `expiresAt` | 세션 만료 시각 |
+| `nickname` | 기기별 24시간 단위로 회전하는 익명 닉네임(현재 프론트엔드는 `tmi-nearby:nickname`에 `{ name, assignedAt }` 저장 후 TTL 24h 경과 시 재추첨) |
+| `expiresAt` | 세션 만료 시각(닉네임 회전 주기와 별도) |
+
+> 닉네임 후보 풀은 프론트엔드 상수 `NICKNAME_CANDIDATES`(라쿤·사과·고양이·복숭아·너구리·두더지·라임·새우·밤·별·연필·봄)를 참고합니다. 서버에서는 회전 주기·후보 풀을 운영자가 조정할 수 있도록 분리합니다.
 
 ## 익명 세션 API
 
@@ -268,14 +274,21 @@ Response
 
 익명 서비스의 안전 기능은 사용자의 피드 경험과 운영 moderation을 분리해서 다룹니다. 숨김과 차단은 즉시 개인 피드에 반영하고, 신고는 서버에 누적해 운영 정책으로 처리합니다.
 
+> 현재 프론트엔드(`src/app.js`)의 localStorage 상태와 대응: `tmi-nearby:hiddenIds`(숨긴 게시물 ID 배열), `tmi-nearby:blockedAuthors`(차단한 작성자 닉네임 문자열 배열), `tmi-nearby:reportedIds`(신고한 게시물 ID 배열). 세션 ID가 아니라 작성자 닉네임(`post.who`)을 기준으로 차단하며, 만료 시각은 없습니다. 각 목록은 UI에서 수동 해제(unhide/unblock)할 수 있습니다.
+
 | 기능 | 엔드포인트 | 설명 |
 | --- | --- | --- |
-| 게시물 신고 | `POST /api/posts/{postId}/reports` | 부적절한 게시물 신고 |
-| 댓글 신고 | `POST /api/comments/{commentId}/reports` | 부적절한 댓글 신고 |
+| 게시물 신고 | `POST /api/posts/{postId}/reports` | 부적절한 게시물 신고. 동일 세션의 동일 게시물 중복 신고는 서버에서 차단(클라이언트는 `reportedIds`로 선제 차단) |
 | 게시물 숨김 | `POST /api/posts/{postId}/hide` | 내 피드에서 해당 게시물 숨김 |
-| 사용자 차단 | `POST /api/sessions/{targetSessionId}/block` | 특정 익명 세션의 글/댓글 숨김 |
+| 게시물 숨김 해제 | `DELETE /api/posts/{postId}/hide` | 숨김 목록에서 게시물 제거(unhide) |
+| 작성자 차단 | `POST /api/posts/{postId}/block-author` | 해당 게시물 작성자의 글/댓글을 내 피드에서 차단. 세션 ID가 아니라 작성자 닉네임(`who`) 기준 |
+| 작성자 차단 해제 | `DELETE /api/sessions/me/blocked-authors/{authorNickname}` | 차단 목록에서 작성자 제거(unblock) |
+
+댓글 신고·사용자 단위 신고는 백엔드 후보에 포함되어 있으나, 현재 프론트엔드에는 게시물 신고만 구현되어 있습니다.
 
 Report Request
+
+> 프론트엔드는 현재 `reason`/`memo`를 보내지 않고 단순 신고 토스트만 노출합니다. 서버에서는 reason을 필수로 두되 클라이언트 폼 확장 시점에 맞춰 전송하도록 설계합니다.
 
 ```json
 {
@@ -302,13 +315,38 @@ Hide Response
 }
 ```
 
+Unhide Response
+
+```json
+{
+  "postId": "post_123",
+  "hidden": false
+}
+```
+
+Block Request
+
+```json
+{
+  "authorNickname": "익명의 라쿤"
+}
+```
+
 Block Response
 
 ```json
 {
-  "targetSessionId": "as_456",
-  "blocked": true,
-  "expiresAt": "2026-07-17T00:00:00+09:00"
+  "authorNickname": "익명의 라쿤",
+  "blocked": true
+}
+```
+
+Unblock Response
+
+```json
+{
+  "authorNickname": "익명의 라쿤",
+  "blocked": false
 }
 ```
 
@@ -321,5 +359,5 @@ Block Response
 | 반복 신고 | 동일 세션의 동일 대상 중복 신고 방지 |
 | 투표 | 세션별 게시물당 1회 투표만 허용 |
 | 민감 정보 | 전화번호, 상세 주소, 실명 노출 가능성이 있는 문구 필터링 |
-| 차단/숨김 | 피드 조회 시 차단 세션과 숨김 게시물을 제외 |
+| 차단/숨김 | 피드 조회 시 차단한 작성자 닉네임과 숨김 게시물을 제외. 차단은 만료 시각 없이 수동 해제(unblock) 전까지 유지 |
 
