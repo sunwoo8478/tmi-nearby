@@ -2,9 +2,11 @@ import { posts, notices, myPosts } from "./data.js";
 
 const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
 const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
+const BLOCKED_AUTHORS_STORAGE_KEY = "tmi-nearby:blockedAuthors";
 
 let userPosts = loadUserPosts();
 let hiddenIds = loadHiddenIds();
+let blockedAuthors = loadBlockedAuthors();
 let feed = createFeed();
 let composeType = "tmi";
 
@@ -81,8 +83,28 @@ function saveHiddenIds() {
   }
 }
 
+function loadBlockedAuthors() {
+  try {
+    const value = localStorage.getItem(BLOCKED_AUTHORS_STORAGE_KEY);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed.filter((a) => typeof a === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveBlockedAuthors() {
+  try {
+    localStorage.setItem(BLOCKED_AUTHORS_STORAGE_KEY, JSON.stringify(blockedAuthors));
+  } catch {
+    // localStorage 사용 불가 시 조용히 무시
+  }
+}
+
 function createFeed() {
-  return [...userPosts, ...posts].filter((post) => !hiddenIds.includes(post.id));
+  return [...userPosts, ...posts].filter(
+    (post) => !hiddenIds.includes(post.id) && !blockedAuthors.includes(post.who),
+  );
 }
 
 function renderFeed() {
@@ -224,6 +246,7 @@ function openCardMenu(button) {
   menu.innerHTML = `
     <button type="button" data-action="hide">숨기기</button>
     <button type="button" data-action="report">신고하기</button>
+    <button type="button" data-action="block">차단하기</button>
   `;
 
   menu.addEventListener("click", (event) => {
@@ -234,6 +257,7 @@ function openCardMenu(button) {
     closeCardMenu();
     if (action === "hide") hidePost(id);
     else if (action === "report") showToast("신고가 접수됐어요");
+    else if (action === "block") blockAuthor(id);
   });
 
   button.parentElement.style.position = "relative";
@@ -259,6 +283,20 @@ function hidePost(id) {
   }
   feed = feed.filter((post) => post.id !== postId);
   renderFeed();
+}
+
+function blockAuthor(id) {
+  const postId = Number(id);
+  const post = feed.find((item) => item.id === postId);
+  if (!post) return;
+  const author = post.who;
+  if (!blockedAuthors.includes(author)) {
+    blockedAuthors.push(author);
+    saveBlockedAuthors();
+  }
+  feed = feed.filter((item) => item.who !== author);
+  renderFeed();
+  showToast(`${author}님의 글을 더 이상 보지 않아요`);
 }
 
 function showToast(message) {

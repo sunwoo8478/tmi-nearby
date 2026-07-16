@@ -21,7 +21,10 @@ for (const dir of [TASK_DIR, DONE_DIR, RESULT_DIR]) {
 }
 
 function nextTask() {
-  const files = readdirSync(TASK_DIR).filter((f) => f.endsWith(".md")).sort();
+  // 순수한 태스크 파일만 잡는다: .md로 끝나고, 숫자로 시작하며, 점(.)으로 시작하지 않는 파일
+  const files = readdirSync(TASK_DIR)
+    .filter((f) => f.endsWith(".md") && !f.startsWith(".") && /^\d/.test(f))
+    .sort();
   return files[0] ?? null;
 }
 
@@ -41,13 +44,13 @@ function runTask(filename) {
     child.stdin.write(content);
     child.stdin.end();
   } else {
-    const promptPath = join(TASK_DIR, `.${id}.prompt.md`);
-    writeFileSync(promptPath, content);
     child = spawn(
       "/Users/sw/.npm-global/bin/cn",
-      ["--config", "./continue-glm.yaml", "--auto", "-p", "--prompt", promptPath, "위 지시대로 작업을 진행해줘."],
+      ["--config", "./continue-glm.yaml", "--auto", "-p", "--silent"],
       { cwd: ROOT },
     );
+    child.stdin.write(content + "\n\n위 지시대로 작업을 진행해줘.");
+    child.stdin.end();
   }
 
   let output = "";

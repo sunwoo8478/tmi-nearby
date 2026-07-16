@@ -1,3 +1,23 @@
+/**
+ * @typedef {object} VoteOption
+ * @property {string} label
+ * @property {number} pct
+ */
+
+/**
+ * @typedef {object} Post
+ * @property {number} id
+ * @property {"tmi" | "vote"} type
+ * @property {string} who
+ * @property {string} distance
+ * @property {string} text
+ * @property {Array<[author: string, text: string]>} comments
+ * @property {string[]} reactions
+ * @property {number} watching
+ * @property {VoteOption[]} [options]
+ */
+
+/** @type {Post[]} */
 export const posts = [
   {
     id: 1,
@@ -52,6 +72,7 @@ export const posts = [
   },
 ];
 
+/** @type {Array<[icon: string, text: string, time: string]>} */
 export const notices = [
   ["♥", "내 TMI가 근처에서 12개의 반응을 받았어요", "방금 전"],
   ["💬", "익명의 복숭아가 댓글을 남겼어요", "3분 전"],
@@ -59,6 +80,7 @@ export const notices = [
   ["🔥", "지금 주변에서 가장 많이 본 TMI가 있어요", "14분 전"],
 ];
 
+/** @type {Array<[tag: string, text: string, time: string, hearts: string, comments: string, views: string]>} */
 export const myPosts = [
   ["TMI", "아침에 산 커피 아직도 반 남음. 이 정도면 장식품이다.", "12분 전", "24", "5", "81"],
   ["투표", "점심 메뉴 고르는 데 20분 넘으면 이미 진 거 아닌가요?", "어제", "39", "11", "146"],
