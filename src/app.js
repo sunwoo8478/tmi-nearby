@@ -26,6 +26,7 @@ const PHONE_PATTERN = /\b0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}\b/;
 
 let lastComposeTime = 0;
 let composeWarnTimer = null;
+let activeNotices = [...notices];
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -361,15 +362,26 @@ function updateLiveCount() {
 }
 
 function renderNotices() {
-  $("#noticeList").innerHTML = notices.map(([icon, text, time]) => `
+  const list = $("#noticeList");
+  if (activeNotices.length === 0) {
+    list.innerHTML = `<p class="notice-empty">새로운 알림이 없어요</p>`;
+    return;
+  }
+  list.innerHTML = activeNotices.map(([icon, text, time], index) => `
     <article class="notice-card">
       <div class="notice-icon">${icon}</div>
       <div>
-        <strong>${text}</strong>
-        <span>${time}</span>
+        <strong>${escapeHtml(text)}</strong>
+        <span>${escapeHtml(time)}</span>
       </div>
+      <button class="notice-dismiss" data-dismiss="${index}" aria-label="알림 닫기">×</button>
     </article>
   `).join("");
+}
+
+function dismissNotice(index) {
+  activeNotices.splice(index, 1);
+  renderNotices();
 }
 
 function sumReactions(reactions) {
@@ -518,6 +530,11 @@ function bindEvents() {
   $("#composeButton").addEventListener("click", openCompose);
   $("#submitCompose").addEventListener("click", submitCompose);
   $("#commentForm").addEventListener("submit", submitComment);
+  $("#noticeList").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-dismiss]");
+    if (!btn) return;
+    dismissNotice(Number(btn.dataset.dismiss));
+  });
   $("#composeInput").addEventListener("input", () => {
     const warn = $("#composeWarn");
     if (!warn.hidden) {
