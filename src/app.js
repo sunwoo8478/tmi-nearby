@@ -1,6 +1,13 @@
 import { posts, notices, myPosts } from "./data.js";
 import { getCurrentPosition, haversineDistanceMeters, formatDistanceMeters, assignNearbyCoordinate } from "./geo.js";
-import { escapeHtml, isValidUserPost, sumReactions } from "./utils.js";
+import {
+  escapeHtml,
+  isValidUserPost,
+  sumReactions,
+  getComposeCooldownRemainingMs,
+  containsBadWord,
+  containsPhoneNumber,
+} from "./utils.js";
 
 const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
 const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
@@ -525,12 +532,11 @@ function submitComment(event) {
   const value = input.value.trim();
   if (!value) return;
 
-  const lower = value.toLowerCase();
-  if (BAD_WORDS.some((word) => lower.includes(word))) {
+  if (containsBadWord(value, BAD_WORDS)) {
     showToast("부적절한 표현이 포함되어 있어요");
     return;
   }
-  if (PHONE_PATTERN.test(value)) {
+  if (containsPhoneNumber(value, PHONE_PATTERN)) {
     showToast("전화번호 등 개인정보는 공유할 수 없어요");
     return;
   }
@@ -561,18 +567,17 @@ function submitCompose(event) {
   if (!value) return;
 
   const now = Date.now();
-  const elapsed = now - lastComposeTime;
-  if (lastComposeTime && elapsed < COMPOSE_COOLDOWN_MS) {
-    showComposeWarn(`잠시 후 다시 시도해주세요 (${Math.ceil((COMPOSE_COOLDOWN_MS - elapsed) / 1000)}초)`);
+  const cooldownRemainingMs = getComposeCooldownRemainingMs(lastComposeTime, now, COMPOSE_COOLDOWN_MS);
+  if (cooldownRemainingMs > 0) {
+    showComposeWarn(`잠시 후 다시 시도해주세요 (${Math.ceil(cooldownRemainingMs / 1000)}초)`);
     return;
   }
 
-  const lower = value.toLowerCase();
-  if (BAD_WORDS.some((word) => lower.includes(word))) {
+  if (containsBadWord(value, BAD_WORDS)) {
     showComposeWarn("부적절한 표현이 포함되어 있어요. 다시 작성해주세요.");
     return;
   }
-  if (PHONE_PATTERN.test(value)) {
+  if (containsPhoneNumber(value, PHONE_PATTERN)) {
     showComposeWarn("전화번호 등 개인정보는 공유할 수 없어요.");
     return;
   }

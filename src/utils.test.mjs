@@ -1,6 +1,13 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { escapeHtml, isValidUserPost, sumReactions } from "./utils.js";
+import {
+  escapeHtml,
+  isValidUserPost,
+  sumReactions,
+  getComposeCooldownRemainingMs,
+  containsBadWord,
+  containsPhoneNumber,
+} from "./utils.js";
 
 describe("escapeHtml", () => {
   test("escapes each special character individually", () => {
@@ -86,5 +93,59 @@ describe("sumReactions", () => {
 
   test("returns 0 for an empty array", () => {
     assert.equal(sumReactions([]), 0);
+  });
+});
+
+describe("getComposeCooldownRemainingMs", () => {
+  test("returns 0 when there is no previous submission", () => {
+    assert.equal(getComposeCooldownRemainingMs(0, 1000, 10000), 0);
+  });
+
+  test("returns 0 once the cooldown window has fully elapsed", () => {
+    assert.equal(getComposeCooldownRemainingMs(1000, 11000, 10000), 0);
+  });
+
+  test("returns the remaining ms while still inside the cooldown window", () => {
+    assert.equal(getComposeCooldownRemainingMs(1000, 4000, 10000), 7000);
+  });
+
+  test("treats the boundary (elapsed === cooldownMs) as allowed", () => {
+    assert.equal(getComposeCooldownRemainingMs(0, 10000, 10000), 0);
+  });
+});
+
+describe("containsBadWord", () => {
+  const badWords = ["시발", "씨발", "병신", "개새", "좆", "fuck", "shit"];
+
+  test("returns true when text contains a banned word", () => {
+    assert.equal(containsBadWord("이 씨발 진짜", badWords), true);
+  });
+
+  test("matches banned words regardless of case", () => {
+    assert.equal(containsBadWord("what the FUCK", badWords), true);
+  });
+
+  test("returns false for clean text", () => {
+    assert.equal(containsBadWord("오늘 점심 뭐 먹지", badWords), false);
+  });
+
+  test("returns false for an empty string", () => {
+    assert.equal(containsBadWord("", badWords), false);
+  });
+});
+
+describe("containsPhoneNumber", () => {
+  const phonePattern = /\b0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}\b/;
+
+  test("detects a hyphenated phone number", () => {
+    assert.equal(containsPhoneNumber("연락처는 010-1234-5678 이에요", phonePattern), true);
+  });
+
+  test("detects a phone number without separators", () => {
+    assert.equal(containsPhoneNumber("01012345678로 연락주세요", phonePattern), true);
+  });
+
+  test("returns false when no phone number is present", () => {
+    assert.equal(containsPhoneNumber("오늘 날씨 진짜 좋다", phonePattern), false);
   });
 });
