@@ -7,6 +7,7 @@ import {
   getComposeCooldownRemainingMs,
   containsBadWord,
   containsPhoneNumber,
+  containsLocationHint,
 } from "./utils.js";
 
 describe("escapeHtml", () => {
@@ -147,5 +148,51 @@ describe("containsPhoneNumber", () => {
 
   test("returns false when no phone number is present", () => {
     assert.equal(containsPhoneNumber("오늘 날씨 진짜 좋다", phonePattern), false);
+  });
+});
+
+describe("containsLocationHint", () => {
+  test("detects a legal dong name", () => {
+    assert.equal(containsLocationHint("저희 집은 역삼동이에요"), true);
+  });
+
+  test("detects a named apartment complex", () => {
+    assert.equal(containsLocationHint("래미안아파트 살아요"), true);
+  });
+
+  test("detects a named residential complex (단지)", () => {
+    assert.equal(containsLocationHint("신도시단지 앞에서 만나요"), true);
+  });
+
+  test("detects a named building (빌딩)", () => {
+    assert.equal(containsLocationHint("타워빌딩 1층에서 봐요"), true);
+  });
+
+  test("detects a building/unit number", () => {
+    assert.equal(containsLocationHint("103동 1502호에 살아요"), true);
+  });
+
+  test("detects a standalone unit number", () => {
+    assert.equal(containsLocationHint("1502호로 와주세요"), true);
+  });
+
+  test("does not flag a common word that happens to end in 동", () => {
+    assert.equal(containsLocationHint("오늘 운동하고 왔어요"), false);
+  });
+
+  test("does not flag a generic apartment mention with no complex name", () => {
+    assert.equal(containsLocationHint("우리 아파트 살아요"), false);
+  });
+
+  test("does not flag the word 전화번호 (no digit prefix before 호)", () => {
+    assert.equal(containsLocationHint("전화번호 남기지 마세요"), false);
+  });
+
+  test("does not flag 단지 used as an adverb (merely/just)", () => {
+    assert.equal(containsLocationHint("그냥 단지 궁금해서 물어본거에요"), false);
+  });
+
+  test("returns false for an empty string", () => {
+    assert.equal(containsLocationHint(""), false);
   });
 });

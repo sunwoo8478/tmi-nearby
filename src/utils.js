@@ -63,3 +63,18 @@ export function containsBadWord(text, badWords) {
 export function containsPhoneNumber(text, phonePattern) {
   return phonePattern.test(text);
 }
+
+const LOCATION_NAME_SUFFIXES = ["동", "아파트", "단지", "빌딩"];
+const LOCATION_NAME_PATTERN = new RegExp(`[가-힣A-Za-z0-9]{2,}(?:${LOCATION_NAME_SUFFIXES.join("|")})`);
+const LOCATION_UNIT_PATTERN = /\d+\s*(?:동|호)/;
+
+/**
+ * 완벽한 주소 파서는 아니고, "OO동/OO아파트/OO단지/OO빌딩"처럼 이름 뒤에
+ * 붙는 한국 주소 접미사와 "103동/301호" 같은 동·호수 표기를 잡아내는
+ * 실용적인 휴리스틱이다.
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function containsLocationHint(text) {
+  return LOCATION_UNIT_PATTERN.test(text) || LOCATION_NAME_PATTERN.test(text);
+}
