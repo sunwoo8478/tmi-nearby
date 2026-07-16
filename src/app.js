@@ -150,9 +150,9 @@ function renderFeed() {
     card.innerHTML = `
       <div class="card-top">
         <div class="card-user">
-          <div class="mini-avatar">${post.who.at(-1)}</div>
-          <strong>${post.who}</strong>
-          <span class="distance">${post.distance}</span>
+          <div class="mini-avatar">${escapeHtml(post.who.at(-1))}</div>
+          <strong>${escapeHtml(post.who)}</strong>
+          <span class="distance">${escapeHtml(post.distance)}</span>
         </div>
         <button class="more-button" aria-label="게시물 메뉴">⋯</button>
       </div>
@@ -177,7 +177,7 @@ function voteMarkup(post) {
       ${post.options.map((option) => `
         <button class="vote-option" style="--pct:${option.pct}%">
           <i class="bar"></i>
-          <span>${option.label}</span>
+          <span>${escapeHtml(option.label)}</span>
           <b>${option.pct}%</b>
         </button>
       `).join("")}
@@ -294,16 +294,22 @@ function openCardMenu(button) {
   button.parentElement.style.position = "relative";
   button.parentElement.append(menu);
   document.addEventListener("pointerdown", onCardMenuOutside, true);
+  document.addEventListener("keydown", onCardMenuKeydown);
 }
 
 function closeCardMenu() {
   $$(".card-menu").forEach((menu) => menu.remove());
   document.removeEventListener("pointerdown", onCardMenuOutside, true);
+  document.removeEventListener("keydown", onCardMenuKeydown);
 }
 
 function onCardMenuOutside(event) {
   if (event.target.closest(".card-menu, .more-button")) return;
   closeCardMenu();
+}
+
+function onCardMenuKeydown(event) {
+  if (event.key === "Escape") closeCardMenu();
 }
 
 function hidePost(id) {
@@ -353,6 +359,7 @@ function showToast(message) {
   setTimeout(() => {
     toast.classList.remove("is-visible");
     toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+    setTimeout(() => toast.remove(), 300);
   }, 1600);
 }
 
@@ -411,9 +418,9 @@ function renderMyPosts() {
 
 function renderDetail(post) {
   $("#detailBody").innerHTML = `
-    <p class="tiny-label">${post.who} · ${post.distance}</p>
+    <p class="tiny-label">${escapeHtml(post.who)} · ${escapeHtml(post.distance)}</p>
     <h3 id="detailTitle" class="sheet-title">${escapeHtml(post.text)}</h3>
-    <div class="reaction-row">${post.reactions.map((reaction) => `<span>${reaction}</span>`).join("")}</div>
+    <div class="reaction-row">${post.reactions.map((reaction) => `<span>${escapeHtml(reaction)}</span>`).join("")}</div>
     <div class="comment-list">
       ${post.comments.map(([who, text]) => `
         <div class="comment-item">
@@ -427,7 +434,7 @@ function renderDetail(post) {
 
 function openDetail(id) {
   const postId = Number(id);
-  const post = feed.find((item) => item.id === postId) || userPosts.find((item) => item.id === postId) || posts.find((item) => item.id === postId) || feed[0];
+  const post = feed.find((item) => item.id === postId) || userPosts.find((item) => item.id === postId) || posts.find((item) => item.id === postId);
   if (!post) return;
   activeDetailPost = post;
   $("#commentInput").value = "";
@@ -442,6 +449,16 @@ function submitComment(event) {
   const input = $("#commentInput");
   const value = input.value.trim();
   if (!value) return;
+
+  const lower = value.toLowerCase();
+  if (BAD_WORDS.some((word) => lower.includes(word))) {
+    showToast("부적절한 표현이 포함되어 있어요");
+    return;
+  }
+  if (PHONE_PATTERN.test(value)) {
+    showToast("전화번호 등 개인정보는 공유할 수 없어요");
+    return;
+  }
 
   activeDetailPost.comments.push(["익명의 라쿤", value]);
   input.value = "";
