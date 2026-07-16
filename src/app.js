@@ -12,6 +12,7 @@ let blockedAuthors = loadBlockedAuthors();
 let reportedIds = loadReportedIds();
 let feed = createFeed();
 let composeType = "tmi";
+let activeDetailPost = null;
 
 const DRAG_THRESHOLD = 100;
 let dragState = null;
@@ -396,10 +397,7 @@ function renderMyPosts() {
   `).join("");
 }
 
-function openDetail(id) {
-  const postId = Number(id);
-  const post = feed.find((item) => item.id === postId) || userPosts.find((item) => item.id === postId) || posts.find((item) => item.id === postId) || feed[0];
-  if (!post) return;
+function renderDetail(post) {
   $("#detailBody").innerHTML = `
     <p class="tiny-label">${post.who} · ${post.distance}</p>
     <h3 id="detailTitle" class="sheet-title">${escapeHtml(post.text)}</h3>
@@ -407,13 +405,37 @@ function openDetail(id) {
     <div class="comment-list">
       ${post.comments.map(([who, text]) => `
         <div class="comment-item">
-          <strong>${who}</strong>
-          <p>${text}</p>
+          <strong>${escapeHtml(who)}</strong>
+          <p>${escapeHtml(text)}</p>
         </div>
       `).join("")}
     </div>
   `;
+}
+
+function openDetail(id) {
+  const postId = Number(id);
+  const post = feed.find((item) => item.id === postId) || userPosts.find((item) => item.id === postId) || posts.find((item) => item.id === postId) || feed[0];
+  if (!post) return;
+  activeDetailPost = post;
+  $("#commentInput").value = "";
+  renderDetail(post);
   $("#detailSheet").showModal();
+}
+
+function submitComment(event) {
+  event.preventDefault();
+  if (!activeDetailPost) return;
+
+  const input = $("#commentInput");
+  const value = input.value.trim();
+  if (!value) return;
+
+  activeDetailPost.comments.push(["익명의 라쿤", value]);
+  input.value = "";
+  renderDetail(activeDetailPost);
+  renderFeed();
+  renderMyPosts();
 }
 
 function openCompose() {
@@ -495,6 +517,7 @@ function bindEvents() {
   });
   $("#composeButton").addEventListener("click", openCompose);
   $("#submitCompose").addEventListener("click", submitCompose);
+  $("#commentForm").addEventListener("submit", submitComment);
   $("#composeInput").addEventListener("input", () => {
     const warn = $("#composeWarn");
     if (!warn.hidden) {

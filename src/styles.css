@@ -963,6 +963,19 @@ button {
   line-height: 1.45;
 }
 
+.comment-form {
+  display: grid;
+  gap: 10px;
+  padding: 0 20px 22px;
+}
+
+.comment-form textarea {
+  height: 72px;
+  border-radius: 18px;
+  padding: 13px 14px;
+  font-size: 14px;
+}
+
 .compose-body h3 {
   margin: 8px 0 16px;
   font-size: 26px;
@@ -1096,7 +1109,8 @@ textarea:focus {
   }
 
   .sheet-body,
-  .compose-body {
+  .compose-body,
+  .comment-form {
     padding-bottom: calc(22px + env(safe-area-inset-bottom));
   }
 }
