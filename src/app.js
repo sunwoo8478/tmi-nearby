@@ -17,6 +17,8 @@ const DRAG_THRESHOLD = 100;
 let dragState = null;
 let isShifting = false;
 
+const NEARBY_RADIUS_METERS = 50;
+
 const COMPOSE_COOLDOWN_MS = 10000;
 const BAD_WORDS = ["시발", "씨발", "병신", "개새", "좆", "fuck", "shit"];
 const PHONE_PATTERN = /\b0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}\b/;
@@ -122,9 +124,13 @@ function saveReportedIds() {
   }
 }
 
+function isWithinRadius(post) {
+  return !post._coords || post._distanceMeters <= NEARBY_RADIUS_METERS;
+}
+
 function createFeed() {
   return [...userPosts, ...posts].filter(
-    (post) => !hiddenIds.includes(post.id) && !blockedAuthors.includes(post.who),
+    (post) => !hiddenIds.includes(post.id) && !blockedAuthors.includes(post.who) && isWithinRadius(post),
   );
 }
 
@@ -523,10 +529,12 @@ function initGeoDistances() {
     .then(({ lat, lng }) => {
       for (const post of [...posts, ...userPosts]) {
         if (post._coords) continue;
-        const { lat: pLat, lng: pLng } = assignNearbyCoordinate(lat, lng, 50);
+        const { lat: pLat, lng: pLng } = assignNearbyCoordinate(lat, lng, NEARBY_RADIUS_METERS);
         post._coords = { lat: pLat, lng: pLng };
-        post.distance = formatDistanceMeters(haversineDistanceMeters(lat, lng, pLat, pLng));
+        post._distanceMeters = haversineDistanceMeters(lat, lng, pLat, pLng);
+        post.distance = formatDistanceMeters(post._distanceMeters);
       }
+      feed = feed.filter(isWithinRadius);
       renderFeed();
     })
     .catch(() => {});
