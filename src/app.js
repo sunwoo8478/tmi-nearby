@@ -6,11 +6,15 @@ const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
 const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
 const BLOCKED_AUTHORS_STORAGE_KEY = "tmi-nearby:blockedAuthors";
 const REPORTED_IDS_STORAGE_KEY = "tmi-nearby:reportedIds";
+const NICKNAME_STORAGE_KEY = "tmi-nearby:nickname";
+const NICKNAME_TTL_MS = 24 * 60 * 60 * 1000;
+const NICKNAME_CANDIDATES = ["라쿤", "사과", "고양이", "복숭아", "너구리", "두더지", "라임", "새우", "밤", "별", "연필", "봄"];
 
 let userPosts = loadUserPosts();
 let hiddenIds = loadHiddenIds();
 let blockedAuthors = loadBlockedAuthors();
 let reportedIds = loadReportedIds();
+let currentNickname = `익명의 ${resolveNickname()}`;
 let feed = createFeed();
 let composeType = "tmi";
 let activeDetailPost = null;
@@ -107,6 +111,36 @@ function saveReportedIds() {
   } catch {
     // localStorage 사용 불가 시 조용히 무시
   }
+}
+
+function loadNickname() {
+  try {
+    const value = localStorage.getItem(NICKNAME_STORAGE_KEY);
+    if (!value) return null;
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed.name !== "string" || typeof parsed.assignedAt !== "number") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveNickname(name) {
+  try {
+    localStorage.setItem(NICKNAME_STORAGE_KEY, JSON.stringify({ name, assignedAt: Date.now() }));
+  } catch {
+    // localStorage 사용 불가 시 조용히 무시
+  }
+}
+
+function resolveNickname() {
+  const stored = loadNickname();
+  if (stored && Date.now() - stored.assignedAt < NICKNAME_TTL_MS) {
+    return stored.name;
+  }
+  const name = NICKNAME_CANDIDATES[Math.floor(Math.random() * NICKNAME_CANDIDATES.length)];
+  saveNickname(name);
+  return name;
 }
 
 function isWithinRadius(post) {
@@ -501,7 +535,7 @@ function submitComment(event) {
     return;
   }
 
-  activeDetailPost.comments.push(["익명의 라쿤", value]);
+  activeDetailPost.comments.push([currentNickname, value]);
   input.value = "";
   renderDetail(activeDetailPost);
   renderFeed();
@@ -547,7 +581,7 @@ function submitCompose(event) {
   const item = {
     id: now,
     type: composeType,
-    who: "익명의 라쿤",
+    who: currentNickname,
     distance: "0m",
     text: value,
     options: composeType === "vote" ? [{ label: "좋다", pct: 55 }, { label: "애매", pct: 45 }] : undefined,
@@ -658,6 +692,7 @@ function initGeoDistances() {
     .catch(() => {});
 }
 
+$("#myNickname").textContent = currentNickname;
 renderFeed();
 renderNotices();
 renderMyPosts();

@@ -146,6 +146,18 @@ npm test
     └── ROADMAP.md
 ```
 
+## 로컬 저장소
+
+서버 없이 동작하는 프로토타입이라, 사용자 상태는 전부 브라우저 `localStorage`에 JSON으로 저장됩니다.
+
+| 키 | 저장 내용 |
+| --- | --- |
+| `tmi-nearby:userPosts` | 사용자가 직접 작성한 TMI/투표 글 |
+| `tmi-nearby:hiddenIds` | 숨김 처리한 게시물 ID 목록 |
+| `tmi-nearby:blockedAuthors` | 차단한 작성자(익명 닉네임) 목록 |
+| `tmi-nearby:reportedIds` | 이미 신고한 게시물 ID 목록(중복 신고 방지) |
+| `tmi-nearby:nickname` | 24시간마다 회전하는 익명 닉네임과 배정 시각 |
+
 ## 앞으로 붙이면 좋은 기능
 
 - WebSocket 기반 실시간 카드 수신
