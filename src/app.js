@@ -7,12 +7,14 @@ import {
   getComposeCooldownRemainingMs,
   containsBadWord,
   containsPhoneNumber,
+  containsLocationHint,
 } from "./utils.js";
 
 const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
 const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
 const BLOCKED_AUTHORS_STORAGE_KEY = "tmi-nearby:blockedAuthors";
 const REPORTED_IDS_STORAGE_KEY = "tmi-nearby:reportedIds";
+const REPORTED_COMMENTS_STORAGE_KEY = "tmi-nearby:reportedComments";
 const NICKNAME_STORAGE_KEY = "tmi-nearby:nickname";
 const NICKNAME_TTL_MS = 24 * 60 * 60 * 1000;
 const NICKNAME_CANDIDATES = ["라쿤", "사과", "고양이", "복숭아", "너구리", "두더지", "라임", "새우", "밤", "별", "연필", "봄"];
@@ -21,6 +23,7 @@ let userPosts = loadUserPosts();
 let hiddenIds = loadHiddenIds();
 let blockedAuthors = loadBlockedAuthors();
 let reportedIds = loadReportedIds();
+let reportedComments = loadReportedComments();
 let currentNickname = `익명의 ${resolveNickname()}`;
 let feed = createFeed();
 let composeType = "tmi";
@@ -115,6 +118,24 @@ function loadReportedIds() {
 function saveReportedIds() {
   try {
     localStorage.setItem(REPORTED_IDS_STORAGE_KEY, JSON.stringify(reportedIds));
+  } catch {
+    // localStorage 사용 불가 시 조용히 무시
+  }
+}
+
+function loadReportedComments() {
+  try {
+    const value = localStorage.getItem(REPORTED_COMMENTS_STORAGE_KEY);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveReportedComments() {
+  try {
+    localStorage.setItem(REPORTED_COMMENTS_STORAGE_KEY, JSON.stringify(reportedComments));
   } catch {
     // localStorage 사용 불가 시 조용히 무시
   }
@@ -379,6 +400,22 @@ function reportPost(id) {
   showToast("신고가 접수됐어요");
 }
 
+function getCommentReportId(postId, commentIndex) {
+  return `${postId}-${commentIndex}`;
+}
+
+function reportComment(postId, commentIndex) {
+  const reportId = getCommentReportId(postId, commentIndex);
+  if (reportedComments.includes(reportId)) {
+    showToast("이미 신고한 댓글이에요");
+    return;
+  }
+  reportedComments.push(reportId);
+  saveReportedComments();
+  showToast("댓글을 신고했어요");
+  renderDetail(activeDetailPost);
+}
+
 function showToast(message) {
   const existing = $("#cardToast");
   if (existing) existing.remove();
@@ -504,12 +541,26 @@ function renderDetail(post) {
     <h3 id="detailTitle" class="sheet-title">${escapeHtml(post.text)}</h3>
     <div class="reaction-row">${post.reactions.map((reaction) => `<span>${escapeHtml(reaction)}</span>`).join("")}</div>
     <div class="comment-list">
-      ${post.comments.map(([who, text]) => `
+      ${post.comments.map(([who, text], index) => {
+        const reportId = getCommentReportId(post.id, index);
+        const alreadyReported = reportedComments.includes(reportId);
+        return `
         <div class="comment-item">
-          <strong>${escapeHtml(who)}</strong>
+          <div class="comment-meta">
+            <strong>${escapeHtml(who)}</strong>
+            <button
+              type="button"
+              class="comment-report"
+              data-report-comment="${index}"
+              ${alreadyReported ? "disabled" : ""}
+              aria-label="${alreadyReported ? "신고 완료된 댓글" : "댓글 신고"}"
+              title="${alreadyReported ? "신고 완료" : "댓글 신고"}"
+            >${alreadyReported ? "신고 완료" : "신고"}</button>
+          </div>
           <p>${escapeHtml(text)}</p>
         </div>
-      `).join("")}
+      `;
+      }).join("")}
     </div>
   `;
 }
@@ -538,6 +589,10 @@ function submitComment(event) {
   }
   if (containsPhoneNumber(value, PHONE_PATTERN)) {
     showToast("전화번호 등 개인정보는 공유할 수 없어요");
+    return;
+  }
+  if (containsLocationHint(value)) {
+    showToast("위치를 특정할 수 있는 표현은 피해주세요");
     return;
   }
 
@@ -579,6 +634,10 @@ function submitCompose(event) {
   }
   if (containsPhoneNumber(value, PHONE_PATTERN)) {
     showComposeWarn("전화번호 등 개인정보는 공유할 수 없어요.");
+    return;
+  }
+  if (containsLocationHint(value)) {
+    showComposeWarn("위치를 특정할 수 있는 표현은 피해주세요.");
     return;
   }
 
@@ -631,6 +690,11 @@ function bindEvents() {
   $("#composeButton").addEventListener("click", openCompose);
   $("#submitCompose").addEventListener("click", submitCompose);
   $("#commentForm").addEventListener("submit", submitComment);
+  $("#detailBody").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-report-comment]");
+    if (!button || button.disabled || !activeDetailPost) return;
+    reportComment(activeDetailPost.id, Number(button.dataset.reportComment));
+  });
   $("#noticeList").addEventListener("click", (event) => {
     const btn = event.target.closest("[data-dismiss]");
     if (!btn) return;
