@@ -557,6 +557,20 @@ button {
   background: rgba(204, 255, 0, 0.18);
 }
 
+.vote-option.is-voted {
+  border-color: rgba(204, 255, 0, 0.72);
+  background: rgba(204, 255, 0, 0.12);
+  box-shadow: 0 0 0 1px rgba(204, 255, 0, 0.22) inset;
+}
+
+.vote-option:disabled {
+  cursor: default;
+}
+
+.vote-option:disabled:not(.is-voted) {
+  color: var(--muted);
+}
+
 .vote-option span {
   position: relative;
   z-index: 1;

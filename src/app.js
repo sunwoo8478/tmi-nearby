@@ -1,5 +1,6 @@
 import { posts, notices, myPosts } from "./data.js";
 import { getCurrentPosition, haversineDistanceMeters, formatDistanceMeters, assignNearbyCoordinate } from "./geo.js";
+import { escapeHtml, isValidUserPost, sumReactions } from "./utils.js";
 
 const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
 const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
@@ -13,6 +14,7 @@ let reportedIds = loadReportedIds();
 let feed = createFeed();
 let composeType = "tmi";
 let activeDetailPost = null;
+let votedOptions = new Map();
 
 const DRAG_THRESHOLD = 100;
 let dragState = null;
@@ -33,25 +35,6 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 const cardStack = $("#cardStack");
 const feedEmpty = $("#feedEmpty");
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (ch) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  }[ch]));
-}
-
-function isValidUserPost(post) {
-  return post
-    && typeof post.id !== "undefined"
-    && typeof post.who === "string"
-    && typeof post.text === "string"
-    && Array.isArray(post.comments)
-    && Array.isArray(post.reactions);
-}
 
 function loadUserPosts() {
   try {
@@ -172,10 +155,11 @@ function renderFeed() {
 }
 
 function voteMarkup(post) {
+  const votedIndex = votedOptions.get(post.id);
   return `
     <div class="vote-options">
-      ${post.options.map((option) => `
-        <button class="vote-option" style="--pct:${option.pct}%">
+      ${post.options.map((option, index) => `
+        <button class="vote-option ${votedIndex === index ? "is-voted" : ""}" data-vote-post="${post.id}" data-vote-option="${index}" style="--pct:${option.pct}%" ${votedIndex !== undefined ? "disabled" : ""}>
           <i class="bar"></i>
           <span>${escapeHtml(option.label)}</span>
           <b>${option.pct}%</b>
@@ -183,6 +167,13 @@ function voteMarkup(post) {
       `).join("")}
     </div>
   `;
+}
+
+function submitVote(button) {
+  const postId = Number(button.dataset.votePost);
+  if (votedOptions.has(postId)) return;
+  votedOptions.set(postId, Number(button.dataset.voteOption));
+  renderFeed();
 }
 
 function bindCardDrag() {
@@ -391,10 +382,6 @@ function dismissNotice(index) {
   renderNotices();
 }
 
-function sumReactions(reactions) {
-  return reactions.reduce((total, reaction) => total + Number(reaction.match(/\d+/)?.[0] ?? 0), 0);
-}
-
 function renderMyPosts() {
   const userEntries = userPosts.map((post) => [
     post.type === "vote" ? "투표" : "TMI",
@@ -560,6 +547,12 @@ function bindEvents() {
     }
   });
   cardStack.addEventListener("click", (event) => {
+    const voteButton = event.target.closest(".vote-option");
+    if (voteButton) {
+      event.stopPropagation();
+      submitVote(voteButton);
+      return;
+    }
     const moreButton = event.target.closest(".more-button");
     if (moreButton) {
       event.stopPropagation();
