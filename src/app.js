@@ -382,6 +382,28 @@ function dismissNotice(index) {
   renderNotices();
 }
 
+function renderBlockedList() {
+  const list = $("#blockedList");
+  if (blockedAuthors.length === 0) {
+    list.innerHTML = `<p class="blocked-empty">차단한 사용자가 없어요</p>`;
+    return;
+  }
+  list.innerHTML = blockedAuthors.map((author) => `
+    <article class="blocked-card">
+      <div class="mini-avatar">${escapeHtml(author.at(-1))}</div>
+      <strong>${escapeHtml(author)}</strong>
+      <button class="unblock-button" data-unblock="${escapeHtml(author)}">차단 해제</button>
+    </article>
+  `).join("");
+}
+
+function unblockAuthor(author) {
+  blockedAuthors = blockedAuthors.filter((a) => a !== author);
+  saveBlockedAuthors();
+  renderBlockedList();
+  showToast(`${author}님의 차단을 해제했어요`);
+}
+
 function renderMyPosts() {
   const userEntries = userPosts.map((post) => [
     post.type === "vote" ? "투표" : "TMI",
@@ -522,6 +544,7 @@ function switchTab(tab) {
     panel.classList.toggle("is-active", panel.dataset.panel === tab);
   });
   $("#composeButton").style.display = tab === "feed" ? "block" : "none";
+  if (tab === "profile") renderBlockedList();
 }
 
 function bindEvents() {
@@ -538,6 +561,11 @@ function bindEvents() {
     const btn = event.target.closest("[data-dismiss]");
     if (!btn) return;
     dismissNotice(Number(btn.dataset.dismiss));
+  });
+  $("#blockedList").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-unblock]");
+    if (!btn) return;
+    unblockAuthor(btn.dataset.unblock);
   });
   $("#composeInput").addEventListener("input", () => {
     const warn = $("#composeWarn");
@@ -593,5 +621,6 @@ function initGeoDistances() {
 renderFeed();
 renderNotices();
 renderMyPosts();
+renderBlockedList();
 bindEvents();
 initGeoDistances();

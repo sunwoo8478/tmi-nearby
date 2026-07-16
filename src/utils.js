@@ -17,12 +17,12 @@ export function escapeHtml(value) {
  * @returns {boolean}
  */
 export function isValidUserPost(post) {
-  return post
+  return Boolean(post
     && typeof post.id !== "undefined"
     && typeof post.who === "string"
     && typeof post.text === "string"
     && Array.isArray(post.comments)
-    && Array.isArray(post.reactions);
+    && Array.isArray(post.reactions));
 }
 
 /**
