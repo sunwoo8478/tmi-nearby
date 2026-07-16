@@ -483,6 +483,15 @@ button {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.card-menu button:disabled {
+  color: var(--dim);
+  cursor: default;
+}
+
+.card-menu button:disabled:hover {
+  background: transparent;
+}
+
 .card-toast {
   position: absolute;
   z-index: 40;

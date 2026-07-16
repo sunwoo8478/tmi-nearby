@@ -3,10 +3,12 @@ import { posts, notices, myPosts } from "./data.js";
 const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
 const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
 const BLOCKED_AUTHORS_STORAGE_KEY = "tmi-nearby:blockedAuthors";
+const REPORTED_IDS_STORAGE_KEY = "tmi-nearby:reportedIds";
 
 let userPosts = loadUserPosts();
 let hiddenIds = loadHiddenIds();
 let blockedAuthors = loadBlockedAuthors();
+let reportedIds = loadReportedIds();
 let feed = createFeed();
 let composeType = "tmi";
 
@@ -96,6 +98,24 @@ function loadBlockedAuthors() {
 function saveBlockedAuthors() {
   try {
     localStorage.setItem(BLOCKED_AUTHORS_STORAGE_KEY, JSON.stringify(blockedAuthors));
+  } catch {
+    // localStorage 사용 불가 시 조용히 무시
+  }
+}
+
+function loadReportedIds() {
+  try {
+    const value = localStorage.getItem(REPORTED_IDS_STORAGE_KEY);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id !== "undefined") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveReportedIds() {
+  try {
+    localStorage.setItem(REPORTED_IDS_STORAGE_KEY, JSON.stringify(reportedIds));
   } catch {
     // localStorage 사용 불가 시 조용히 무시
   }
@@ -243,20 +263,22 @@ function openCardMenu(button) {
   const menu = document.createElement("div");
   menu.className = "card-menu";
   menu.dataset.cardMenu = "1";
+  const postId = Number(id);
+  const alreadyReported = reportedIds.includes(postId);
   menu.innerHTML = `
     <button type="button" data-action="hide">숨기기</button>
-    <button type="button" data-action="report">신고하기</button>
+    <button type="button" data-action="report" ${alreadyReported ? "disabled" : ""}>${alreadyReported ? "신고 완료" : "신고하기"}</button>
     <button type="button" data-action="block">차단하기</button>
   `;
 
   menu.addEventListener("click", (event) => {
     const target = event.target.closest("[data-action]");
-    if (!target) return;
+    if (!target || target.disabled) return;
     event.stopPropagation();
     const action = target.dataset.action;
     closeCardMenu();
     if (action === "hide") hidePost(id);
-    else if (action === "report") showToast("신고가 접수됐어요");
+    else if (action === "report") reportPost(id);
     else if (action === "block") blockAuthor(id);
   });
 
@@ -297,6 +319,17 @@ function blockAuthor(id) {
   feed = feed.filter((item) => item.who !== author);
   renderFeed();
   showToast(`${author}님의 글을 더 이상 보지 않아요`);
+}
+
+function reportPost(id) {
+  const postId = Number(id);
+  if (reportedIds.includes(postId)) {
+    showToast("이미 신고한 게시물이에요");
+    return;
+  }
+  reportedIds.push(postId);
+  saveReportedIds();
+  showToast("신고가 접수됐어요");
 }
 
 function showToast(message) {
