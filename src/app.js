@@ -404,6 +404,38 @@ function unblockAuthor(author) {
   showToast(`${author}님의 차단을 해제했어요`);
 }
 
+function renderHiddenList() {
+  const list = $("#hiddenList");
+  if (hiddenIds.length === 0) {
+    list.innerHTML = `<p class="hidden-empty">숨긴 게시물이 없어요</p>`;
+    return;
+  }
+  const allPosts = [...userPosts, ...posts];
+  list.innerHTML = hiddenIds.map((id) => {
+    const post = allPosts.find((item) => item.id === id);
+    if (!post) return "";
+    const preview = post.text.length > 20 ? `${post.text.slice(0, 20)}…` : post.text;
+    return `
+      <article class="hidden-card">
+        <div class="mini-avatar">${escapeHtml(post.who.at(-1))}</div>
+        <div class="hidden-info">
+          <strong>${escapeHtml(preview)}</strong>
+          <span>${escapeHtml(post.who)}</span>
+        </div>
+        <button class="unhide-button" data-unhide="${id}">숨김 해제</button>
+      </article>
+    `;
+  }).join("");
+}
+
+function unhidePost(id) {
+  const postId = Number(id);
+  hiddenIds = hiddenIds.filter((hiddenId) => hiddenId !== postId);
+  saveHiddenIds();
+  renderHiddenList();
+  showToast("숨김을 해제했어요");
+}
+
 function renderMyPosts() {
   const userEntries = userPosts.map((post) => [
     post.type === "vote" ? "투표" : "TMI",
@@ -544,7 +576,10 @@ function switchTab(tab) {
     panel.classList.toggle("is-active", panel.dataset.panel === tab);
   });
   $("#composeButton").style.display = tab === "feed" ? "block" : "none";
-  if (tab === "profile") renderBlockedList();
+  if (tab === "profile") {
+    renderBlockedList();
+    renderHiddenList();
+  }
 }
 
 function bindEvents() {
@@ -566,6 +601,11 @@ function bindEvents() {
     const btn = event.target.closest("[data-unblock]");
     if (!btn) return;
     unblockAuthor(btn.dataset.unblock);
+  });
+  $("#hiddenList").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-unhide]");
+    if (!btn) return;
+    unhidePost(btn.dataset.unhide);
   });
   $("#composeInput").addEventListener("input", () => {
     const warn = $("#composeWarn");
@@ -622,5 +662,6 @@ renderFeed();
 renderNotices();
 renderMyPosts();
 renderBlockedList();
+renderHiddenList();
 bindEvents();
 initGeoDistances();
