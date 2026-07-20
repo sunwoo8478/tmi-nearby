@@ -221,6 +221,9 @@ function onDragStart(event) {
   card.addEventListener("pointermove", onDragMove);
   card.addEventListener("pointerup", onDragEnd);
   card.addEventListener("pointercancel", onDragEnd);
+  // 드래그 중 카드가 다른 렌더로 DOM에서 사라지는 등 캡처가 강제로 풀리는 경우
+  // pointerup/pointercancel 없이도 dragState를 정리하기 위한 안전망.
+  card.addEventListener("lostpointercapture", onDragAbort);
 }
 
 function onDragMove(event) {
@@ -251,10 +254,7 @@ function onDragEnd(event) {
   if (!dragState || event.pointerId !== dragState.pointerId) return;
   const { card, dx, moved } = dragState;
   card.releasePointerCapture(event.pointerId);
-  card.classList.remove("is-dragging");
-  card.removeEventListener("pointermove", onDragMove);
-  card.removeEventListener("pointerup", onDragEnd);
-  card.removeEventListener("pointercancel", onDragEnd);
+  cleanupDragListeners(card);
   dragState = null;
 
   if (moved && Math.abs(dx) > DRAG_THRESHOLD) {
@@ -265,6 +265,21 @@ function onDragEnd(event) {
   card.style.transform = "";
   card.querySelector(".stamp-like").style.opacity = "0";
   card.querySelector(".stamp-nope").style.opacity = "0";
+}
+
+function onDragAbort(event) {
+  if (!dragState || event.pointerId !== dragState.pointerId) return;
+  const { card } = dragState;
+  cleanupDragListeners(card);
+  dragState = null;
+}
+
+function cleanupDragListeners(card) {
+  card.classList.remove("is-dragging");
+  card.removeEventListener("pointermove", onDragMove);
+  card.removeEventListener("pointerup", onDragEnd);
+  card.removeEventListener("pointercancel", onDragEnd);
+  card.removeEventListener("lostpointercapture", onDragAbort);
 }
 
 function shiftCard(direction = "like", card = $(".tmi-card")) {
