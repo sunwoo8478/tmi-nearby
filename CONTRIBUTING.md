@@ -22,6 +22,8 @@
 | `getComposeCooldownRemainingMs(lastComposeTime, now, cooldownMs)` | 중복 작성 방지 쿨다운 잔여 시간(ms) 반환, 0이면 허용 | `lastComposeTime`, `Date.now()`, `COMPOSE_COOLDOWN_MS` |
 | `containsBadWord(text, badWords)` | 금지어 포함 여부 | 작성/댓글 텍스트, `BAD_WORDS` 배열 |
 | `containsPhoneNumber(text, phonePattern)` | 전화번호 패턴 포함 여부 | 텍스트, `PHONE_PATTERN` 정규식 |
+| `containsLocationHint(text)` | 동/호수/아파트/단지/빌딩처럼 위치를 특정할 수 있는 표현 포함 여부 | 작성/댓글 텍스트 |
+| `getCommentReportId(postId, commentIndex)` | 댓글 신고 중복 방지용 로컬 식별자 생성 | 게시물 ID, 댓글 index |
 
 이 패턴을 따르면:
 - `node --test`로 브라우저 환경 없이 검증 로직만 단독 테스트 가능합니다.

@@ -29,7 +29,7 @@ locations
   └─ radius_visibility
 ```
 
-> 개인 피드 상태(숨김/차단/신고 누적)는 `anonymous_sessions` 하위에 저장합니다. 현재 프론트엔드 localStorage 키와 대응: `hiddenIds`(숨긴 게시물 ID), `blockedAuthors`(차단한 작성자 닉네임), `reportedIds`(신고한 게시물 ID). 닉네임 회전 상태(`{ name, assignedAt }`, TTL 24h)도 세션에 보관합니다.
+> 개인 피드 상태(숨김/차단/신고 누적)는 `anonymous_sessions` 하위에 저장합니다. 현재 프론트엔드 localStorage 키와 대응: `hiddenIds`(숨긴 게시물 ID), `blockedAuthors`(차단한 작성자 닉네임), `reportedIds`(신고한 게시물 ID), `reportedComments`(신고한 댓글 식별자), `reportedAuthors`(신고한 작성자 닉네임). 닉네임 회전 상태(`{ name, assignedAt }`, TTL 24h)도 세션에 보관합니다.
 
 ## 인증 방식
 
@@ -274,11 +274,13 @@ Response
 
 익명 서비스의 안전 기능은 사용자의 피드 경험과 운영 moderation을 분리해서 다룹니다. 숨김과 차단은 즉시 개인 피드에 반영하고, 신고는 서버에 누적해 운영 정책으로 처리합니다.
 
-> 현재 프론트엔드(`src/app.js`)의 localStorage 상태와 대응: `tmi-nearby:hiddenIds`(숨긴 게시물 ID 배열), `tmi-nearby:blockedAuthors`(차단한 작성자 닉네임 문자열 배열), `tmi-nearby:reportedIds`(신고한 게시물 ID 배열). 세션 ID가 아니라 작성자 닉네임(`post.who`)을 기준으로 차단하며, 만료 시각은 없습니다. 각 목록은 UI에서 수동 해제(unhide/unblock)할 수 있습니다.
+> 현재 프론트엔드(`src/app.js`)의 localStorage 상태와 대응: `tmi-nearby:hiddenIds`(숨긴 게시물 ID 배열), `tmi-nearby:blockedAuthors`(차단한 작성자 닉네임 문자열 배열), `tmi-nearby:reportedIds`(신고한 게시물 ID 배열), `tmi-nearby:reportedComments`(신고한 댓글 식별자 배열), `tmi-nearby:reportedAuthors`(신고한 작성자 닉네임 문자열 배열). 세션 ID가 아니라 작성자 닉네임(`post.who`)을 기준으로 차단하며, 만료 시각은 없습니다. 숨김/차단 목록은 UI에서 수동 해제(unhide/unblock)할 수 있고, 신고 목록은 중복 신고 방지용 로컬 기록입니다.
 
 | 기능 | 엔드포인트 | 설명 |
 | --- | --- | --- |
 | 게시물 신고 | `POST /api/posts/{postId}/reports` | 부적절한 게시물 신고. 동일 세션의 동일 게시물 중복 신고는 서버에서 차단(클라이언트는 `reportedIds`로 선제 차단) |
+| 댓글 신고 | `POST /api/posts/{postId}/comments/{commentId}/reports` | 부적절한 댓글 신고. 현재 클라이언트는 `${postId}-${commentIndex}` 형식의 `reportedComments`로 중복 신고를 막음 |
+| 작성자 신고 | `POST /api/authors/{authorNickname}/reports` | 작성자 단위 신고. 현재 클라이언트는 작성자 닉네임 기준 `reportedAuthors`로 중복 신고를 막음 |
 | 게시물 숨김 | `POST /api/posts/{postId}/hide` | 내 피드에서 해당 게시물 숨김 |
 | 게시물 숨김 해제 | `DELETE /api/posts/{postId}/hide` | 숨김 목록에서 게시물 제거(unhide) |
 | 작성자 차단 | `POST /api/posts/{postId}/block-author` | 해당 게시물 작성자의 글/댓글을 내 피드에서 차단. 세션 ID가 아니라 작성자 닉네임(`who`) 기준 |
@@ -360,4 +362,3 @@ Unblock Response
 | 투표 | 세션별 게시물당 1회 투표만 허용 |
 | 민감 정보 | 전화번호, 상세 주소, 실명 노출 가능성이 있는 문구 필터링 |
 | 차단/숨김 | 피드 조회 시 차단한 작성자 닉네임과 숨김 게시물을 제외. 차단은 만료 시각 없이 수동 해제(unblock) 전까지 유지 |
-
