@@ -69,6 +69,8 @@ const NEARBY_RADIUS_METERS = 50;
 const COMPOSE_COOLDOWN_MS = 10000;
 const BAD_WORDS = ["시발", "씨발", "병신", "개새", "좆", "fuck", "shit"];
 const PHONE_PATTERN = /\b0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}\b/;
+const BASE_PROFILE_POST_COUNT = 18;
+const BASE_PROFILE_REACTION_COUNT = 274;
 
 let lastComposeTime = 0;
 let composeWarnTimer = null;
@@ -506,6 +508,15 @@ function renderMyPosts() {
   `).join("");
 }
 
+function renderProfileStats() {
+  const [postCount, reactionCount] = $$(".profile-stats strong");
+  if (postCount) postCount.textContent = String(BASE_PROFILE_POST_COUNT + userPosts.length);
+  if (reactionCount) {
+    const userReactionCount = userPosts.reduce((total, post) => total + sumReactions(post.reactions), 0);
+    reactionCount.textContent = String(BASE_PROFILE_REACTION_COUNT + userReactionCount);
+  }
+}
+
 function renderDetail(post) {
   $("#detailBody").innerHTML = `
     <p class="tiny-label">${escapeHtml(post.who)} · ${escapeHtml(post.distance)}</p>
@@ -632,6 +643,7 @@ function submitCompose(event) {
   $("#composeSheet").close();
   renderFeed();
   renderMyPosts();
+  renderProfileStats();
   switchTab("feed");
 }
 
@@ -736,6 +748,7 @@ $("#myNickname").textContent = currentNickname;
 renderFeed();
 renderNotices();
 renderMyPosts();
+renderProfileStats();
 renderBlockedList();
 renderHiddenList();
 bindEvents();
