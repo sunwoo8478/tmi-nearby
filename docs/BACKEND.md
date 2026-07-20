@@ -284,7 +284,7 @@ Response
 | 작성자 차단 | `POST /api/posts/{postId}/block-author` | 해당 게시물 작성자의 글/댓글을 내 피드에서 차단. 세션 ID가 아니라 작성자 닉네임(`who`) 기준 |
 | 작성자 차단 해제 | `DELETE /api/sessions/me/blocked-authors/{authorNickname}` | 차단 목록에서 작성자 제거(unblock) |
 
-댓글 신고·사용자 단위 신고는 백엔드 후보에 포함되어 있으나, 현재 프론트엔드에는 게시물 신고만 구현되어 있습니다.
+게시물·댓글·작성자 신고 모두 프론트엔드에 구현되어 있습니다(각각 `reportedIds`/`reportedComments`/`reportedAuthors`로 중복 신고 방지). 다만 이는 로컬 기록일 뿐 운영자 검토로 이어지지는 않으며, 그 부분은 여전히 백엔드 후보입니다.
 
 Report Request
 

@@ -8,6 +8,7 @@ import {
   containsBadWord,
   containsPhoneNumber,
   containsLocationHint,
+  getCommentReportId,
 } from "./utils.js";
 
 const USER_POSTS_STORAGE_KEY = "tmi-nearby:userPosts";
@@ -20,12 +21,39 @@ const NICKNAME_STORAGE_KEY = "tmi-nearby:nickname";
 const NICKNAME_TTL_MS = 24 * 60 * 60 * 1000;
 const NICKNAME_CANDIDATES = ["라쿤", "사과", "고양이", "복숭아", "너구리", "두더지", "라임", "새우", "밤", "별", "연필", "봄"];
 
+function createArrayStorage(storageKey, isValidItem) {
+  return {
+    load() {
+      try {
+        const value = localStorage.getItem(storageKey);
+        const parsed = value ? JSON.parse(value) : [];
+        return Array.isArray(parsed) ? parsed.filter(isValidItem) : [];
+      } catch {
+        return [];
+      }
+    },
+    save(list) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(list));
+      } catch {
+        // localStorage 사용 불가 시 조용히 무시
+      }
+    },
+  };
+}
+
+const hiddenIdsStorage = createArrayStorage(HIDDEN_IDS_STORAGE_KEY, (id) => typeof id !== "undefined");
+const blockedAuthorsStorage = createArrayStorage(BLOCKED_AUTHORS_STORAGE_KEY, (a) => typeof a === "string");
+const reportedIdsStorage = createArrayStorage(REPORTED_IDS_STORAGE_KEY, (id) => typeof id !== "undefined");
+const reportedCommentsStorage = createArrayStorage(REPORTED_COMMENTS_STORAGE_KEY, (id) => typeof id === "string");
+const reportedAuthorsStorage = createArrayStorage(REPORTED_AUTHORS_STORAGE_KEY, (author) => typeof author === "string");
+
 let userPosts = loadUserPosts();
-let hiddenIds = loadHiddenIds();
-let blockedAuthors = loadBlockedAuthors();
-let reportedIds = loadReportedIds();
-let reportedComments = loadReportedComments();
-let reportedAuthors = loadReportedAuthors();
+let hiddenIds = hiddenIdsStorage.load();
+let blockedAuthors = blockedAuthorsStorage.load();
+let reportedIds = reportedIdsStorage.load();
+let reportedComments = reportedCommentsStorage.load();
+let reportedAuthors = reportedAuthorsStorage.load();
 let currentNickname = `익명의 ${resolveNickname()}`;
 let feed = createFeed();
 let composeType = "tmi";
@@ -68,96 +96,6 @@ function saveUserPosts() {
     localStorage.setItem(USER_POSTS_STORAGE_KEY, JSON.stringify(userPosts));
   } catch {
     // localStorage 사용 불가(프라이빗 모드, 용량 초과 등) 시 조용히 무시
-  }
-}
-
-function loadHiddenIds() {
-  try {
-    const value = localStorage.getItem(HIDDEN_IDS_STORAGE_KEY);
-    const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed) ? parsed.filter((id) => typeof id !== "undefined") : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveHiddenIds() {
-  try {
-    localStorage.setItem(HIDDEN_IDS_STORAGE_KEY, JSON.stringify(hiddenIds));
-  } catch {
-    // localStorage 사용 불가 시 조용히 무시
-  }
-}
-
-function loadBlockedAuthors() {
-  try {
-    const value = localStorage.getItem(BLOCKED_AUTHORS_STORAGE_KEY);
-    const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed) ? parsed.filter((a) => typeof a === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveBlockedAuthors() {
-  try {
-    localStorage.setItem(BLOCKED_AUTHORS_STORAGE_KEY, JSON.stringify(blockedAuthors));
-  } catch {
-    // localStorage 사용 불가 시 조용히 무시
-  }
-}
-
-function loadReportedIds() {
-  try {
-    const value = localStorage.getItem(REPORTED_IDS_STORAGE_KEY);
-    const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed) ? parsed.filter((id) => typeof id !== "undefined") : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveReportedIds() {
-  try {
-    localStorage.setItem(REPORTED_IDS_STORAGE_KEY, JSON.stringify(reportedIds));
-  } catch {
-    // localStorage 사용 불가 시 조용히 무시
-  }
-}
-
-function loadReportedComments() {
-  try {
-    const value = localStorage.getItem(REPORTED_COMMENTS_STORAGE_KEY);
-    const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveReportedComments() {
-  try {
-    localStorage.setItem(REPORTED_COMMENTS_STORAGE_KEY, JSON.stringify(reportedComments));
-  } catch {
-    // localStorage 사용 불가 시 조용히 무시
-  }
-}
-
-function loadReportedAuthors() {
-  try {
-    const value = localStorage.getItem(REPORTED_AUTHORS_STORAGE_KEY);
-    const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed) ? parsed.filter((author) => typeof author === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveReportedAuthors() {
-  try {
-    localStorage.setItem(REPORTED_AUTHORS_STORAGE_KEY, JSON.stringify(reportedAuthors));
-  } catch {
-    // localStorage 사용 불가 시 조용히 무시
   }
 }
 
@@ -393,7 +331,7 @@ function hidePost(id) {
   const postId = Number(id);
   if (!hiddenIds.includes(postId)) {
     hiddenIds.push(postId);
-    saveHiddenIds();
+    hiddenIdsStorage.save(hiddenIds);
   }
   feed = feed.filter((post) => post.id !== postId);
   renderFeed();
@@ -406,22 +344,26 @@ function blockAuthor(id) {
   const author = post.who;
   if (!blockedAuthors.includes(author)) {
     blockedAuthors.push(author);
-    saveBlockedAuthors();
+    blockedAuthorsStorage.save(blockedAuthors);
   }
   feed = feed.filter((item) => item.who !== author);
   renderFeed();
   showToast(`${author}님의 글을 더 이상 보지 않아요`);
 }
 
-function reportPost(id) {
-  const postId = Number(id);
-  if (reportedIds.includes(postId)) {
-    showToast("이미 신고한 게시물이에요");
-    return;
+function reportOnce(list, storage, key, alreadyMessage, doneMessage) {
+  if (list.includes(key)) {
+    showToast(alreadyMessage);
+    return false;
   }
-  reportedIds.push(postId);
-  saveReportedIds();
-  showToast("신고가 접수됐어요");
+  list.push(key);
+  storage.save(list);
+  showToast(doneMessage);
+  return true;
+}
+
+function reportPost(id) {
+  reportOnce(reportedIds, reportedIdsStorage, Number(id), "이미 신고한 게시물이에요", "신고가 접수됐어요");
 }
 
 function reportAuthor(id) {
@@ -429,28 +371,12 @@ function reportAuthor(id) {
   const post = feed.find((item) => item.id === postId);
   if (!post) return;
   const author = post.who;
-  if (reportedAuthors.includes(author)) {
-    showToast("이미 신고한 작성자예요");
-    return;
-  }
-  reportedAuthors.push(author);
-  saveReportedAuthors();
-  showToast(`${author}님을 신고했어요`);
-}
-
-function getCommentReportId(postId, commentIndex) {
-  return `${postId}-${commentIndex}`;
+  reportOnce(reportedAuthors, reportedAuthorsStorage, author, "이미 신고한 작성자예요", `${author}님을 신고했어요`);
 }
 
 function reportComment(postId, commentIndex) {
   const reportId = getCommentReportId(postId, commentIndex);
-  if (reportedComments.includes(reportId)) {
-    showToast("이미 신고한 댓글이에요");
-    return;
-  }
-  reportedComments.push(reportId);
-  saveReportedComments();
-  showToast("댓글을 신고했어요");
+  if (!reportOnce(reportedComments, reportedCommentsStorage, reportId, "이미 신고한 댓글이에요", "댓글을 신고했어요")) return;
   renderDetail(activeDetailPost);
 }
 
@@ -517,7 +443,7 @@ function renderBlockedList() {
 
 function unblockAuthor(author) {
   blockedAuthors = blockedAuthors.filter((a) => a !== author);
-  saveBlockedAuthors();
+  blockedAuthorsStorage.save(blockedAuthors);
   renderBlockedList();
   showToast(`${author}님의 차단을 해제했어요`);
 }
@@ -549,7 +475,7 @@ function renderHiddenList() {
 function unhidePost(id) {
   const postId = Number(id);
   hiddenIds = hiddenIds.filter((hiddenId) => hiddenId !== postId);
-  saveHiddenIds();
+  hiddenIdsStorage.save(hiddenIds);
   renderHiddenList();
   showToast("숨김을 해제했어요");
 }

@@ -8,6 +8,7 @@ import {
   containsBadWord,
   containsPhoneNumber,
   containsLocationHint,
+  getCommentReportId,
 } from "./utils.js";
 
 describe("escapeHtml", () => {
@@ -111,7 +112,7 @@ describe("getComposeCooldownRemainingMs", () => {
   });
 
   test("treats the boundary (elapsed === cooldownMs) as allowed", () => {
-    assert.equal(getComposeCooldownRemainingMs(0, 10000, 10000), 0);
+    assert.equal(getComposeCooldownRemainingMs(1000, 11000, 10000), 0);
   });
 });
 
@@ -192,7 +193,41 @@ describe("containsLocationHint", () => {
     assert.equal(containsLocationHint("그냥 단지 궁금해서 물어본거에요"), false);
   });
 
+  test("does not flag 동네 (neighborhood) with no space before it", () => {
+    assert.equal(containsLocationHint("우리동네 최고"), false);
+  });
+
+  test("does not flag 아파트 glued to a generic prefix with no space", () => {
+    assert.equal(containsLocationHint("우리아파트 살아요"), false);
+  });
+
+  test("does not flag a subway line number (호선)", () => {
+    assert.equal(containsLocationHint("2호선 타고 가요"), false);
+  });
+
+  test("does not flag a store branch number (호점)", () => {
+    assert.equal(containsLocationHint("3호점에서 만나요"), false);
+  });
+
+  test("does not flag a vehicle number (호차)", () => {
+    assert.equal(containsLocationHint("1호차에 있어요"), false);
+  });
+
   test("returns false for an empty string", () => {
     assert.equal(containsLocationHint(""), false);
+  });
+});
+
+describe("getCommentReportId", () => {
+  test("joins postId and commentIndex with a hyphen", () => {
+    assert.equal(getCommentReportId(42, 3), "42-3");
+  });
+
+  test("distinguishes different comment indexes on the same post", () => {
+    assert.notEqual(getCommentReportId(1, 0), getCommentReportId(1, 1));
+  });
+
+  test("distinguishes the same comment index on different posts", () => {
+    assert.notEqual(getCommentReportId(1, 0), getCommentReportId(2, 0));
   });
 });
