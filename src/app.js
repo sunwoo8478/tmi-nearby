@@ -741,7 +741,9 @@ function initGeoDistances() {
       feed = feed.filter(isWithinRadius);
       renderFeed();
     })
-    .catch(() => {});
+    .catch(() => {
+      showToast("위치 정보를 가져오지 못했어요, 기본 거리로 표시해요");
+    });
 }
 
 $("#myNickname").textContent = currentNickname;
