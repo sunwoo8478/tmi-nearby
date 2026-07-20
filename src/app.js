@@ -335,6 +335,7 @@ function hidePost(id) {
   }
   feed = feed.filter((post) => post.id !== postId);
   renderFeed();
+  showToast("게시물을 숨겼어요");
 }
 
 function blockAuthor(id) {
@@ -444,6 +445,8 @@ function renderBlockedList() {
 function unblockAuthor(author) {
   blockedAuthors = blockedAuthors.filter((a) => a !== author);
   blockedAuthorsStorage.save(blockedAuthors);
+  feed = createFeed();
+  renderFeed();
   renderBlockedList();
   showToast(`${author}님의 차단을 해제했어요`);
 }
@@ -476,6 +479,8 @@ function unhidePost(id) {
   const postId = Number(id);
   hiddenIds = hiddenIds.filter((hiddenId) => hiddenId !== postId);
   hiddenIdsStorage.save(hiddenIds);
+  feed = createFeed();
+  renderFeed();
   renderHiddenList();
   showToast("숨김을 해제했어요");
 }
