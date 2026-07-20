@@ -18,6 +18,7 @@ const REPORTED_IDS_STORAGE_KEY = "tmi-nearby:reportedIds";
 const REPORTED_COMMENTS_STORAGE_KEY = "tmi-nearby:reportedComments";
 const REPORTED_AUTHORS_STORAGE_KEY = "tmi-nearby:reportedAuthors";
 const VOTED_OPTIONS_STORAGE_KEY = "tmi-nearby:votedOptions";
+const DISMISSED_NOTICES_STORAGE_KEY = "tmi-nearby:dismissedNotices";
 const NICKNAME_STORAGE_KEY = "tmi-nearby:nickname";
 const NICKNAME_TTL_MS = 24 * 60 * 60 * 1000;
 const NICKNAME_CANDIDATES = ["라쿤", "사과", "고양이", "복숭아", "너구리", "두더지", "라임", "새우", "밤", "별", "연필", "봄"];
@@ -52,6 +53,7 @@ const votedOptionsStorage = createArrayStorage(
   VOTED_OPTIONS_STORAGE_KEY,
   (entry) => Array.isArray(entry) && entry.length === 2 && typeof entry[0] === "number" && typeof entry[1] === "number",
 );
+const dismissedNoticesStorage = createArrayStorage(DISMISSED_NOTICES_STORAGE_KEY, (key) => typeof key === "string");
 
 let userPosts = loadUserPosts();
 let hiddenIds = hiddenIdsStorage.load();
@@ -59,6 +61,7 @@ let blockedAuthors = blockedAuthorsStorage.load();
 let reportedIds = reportedIdsStorage.load();
 let reportedComments = reportedCommentsStorage.load();
 let reportedAuthors = reportedAuthorsStorage.load();
+let dismissedNoticeKeys = dismissedNoticesStorage.load();
 let currentNickname = `익명의 ${resolveNickname()}`;
 let feed = createFeed();
 let composeType = "tmi";
@@ -79,7 +82,7 @@ const BASE_PROFILE_REACTION_COUNT = 274;
 
 let lastComposeTime = 0;
 let composeWarnTimer = null;
-let activeNotices = [...notices];
+let activeNotices = createActiveNotices();
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -144,6 +147,14 @@ function createFeed() {
   return [...userPosts, ...posts].filter(
     (post) => !hiddenIds.includes(post.id) && !blockedAuthors.includes(post.who) && isWithinRadius(post),
   );
+}
+
+function getNoticeKey([icon, text, time]) {
+  return `${icon}|${text}|${time}`;
+}
+
+function createActiveNotices() {
+  return notices.filter((notice) => !dismissedNoticeKeys.includes(getNoticeKey(notice)));
 }
 
 function renderFeed() {
@@ -431,6 +442,13 @@ function renderNotices() {
 }
 
 function dismissNotice(index) {
+  const notice = activeNotices[index];
+  if (!notice) return;
+  const noticeKey = getNoticeKey(notice);
+  if (!dismissedNoticeKeys.includes(noticeKey)) {
+    dismissedNoticeKeys.push(noticeKey);
+    dismissedNoticesStorage.save(dismissedNoticeKeys);
+  }
   activeNotices.splice(index, 1);
   renderNotices();
 }
