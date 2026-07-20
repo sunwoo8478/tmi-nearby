@@ -156,6 +156,8 @@ npm test
 | `tmi-nearby:hiddenIds` | 숨김 처리한 게시물 ID 목록 |
 | `tmi-nearby:blockedAuthors` | 차단한 작성자(익명 닉네임) 목록 |
 | `tmi-nearby:reportedIds` | 이미 신고한 게시물 ID 목록(중복 신고 방지) |
+| `tmi-nearby:reportedComments` | 이미 신고한 댓글 식별자(`${postId}-${commentIndex}`) 목록(중복 신고 방지) |
+| `tmi-nearby:reportedAuthors` | 이미 신고한 작성자(익명 닉네임) 목록(중복 신고 방지) |
 | `tmi-nearby:nickname` | 24시간마다 회전하는 익명 닉네임과 배정 시각 |
 
 ## 앞으로 붙이면 좋은 기능
