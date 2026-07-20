@@ -460,6 +460,8 @@ function showToast(message) {
   const toast = document.createElement("div");
   toast.id = "cardToast";
   toast.className = "card-toast";
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
   toast.textContent = message;
   $(".app-screen").append(toast);
   toast.classList.add("is-visible");
