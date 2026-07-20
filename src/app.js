@@ -54,6 +54,7 @@ const votedOptionsStorage = createArrayStorage(
   (entry) => Array.isArray(entry) && entry.length === 2 && typeof entry[0] === "number" && typeof entry[1] === "number",
 );
 const dismissedNoticesStorage = createArrayStorage(DISMISSED_NOTICES_STORAGE_KEY, (key) => typeof key === "string");
+const userPostsStorage = createArrayStorage(USER_POSTS_STORAGE_KEY, isValidUserPost);
 
 let userPosts = loadUserPosts();
 let hiddenIds = hiddenIdsStorage.load();
@@ -91,22 +92,11 @@ const cardStack = $("#cardStack");
 const feedEmpty = $("#feedEmpty");
 
 function loadUserPosts() {
-  try {
-    const value = localStorage.getItem(USER_POSTS_STORAGE_KEY);
-    const parsed = value ? JSON.parse(value) : [];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidUserPost).sort((a, b) => Number(b.id) - Number(a.id));
-  } catch {
-    return [];
-  }
+  return userPostsStorage.load().sort((a, b) => Number(b.id) - Number(a.id));
 }
 
 function saveUserPosts() {
-  try {
-    localStorage.setItem(USER_POSTS_STORAGE_KEY, JSON.stringify(userPosts));
-  } catch {
-    // localStorage 사용 불가(프라이빗 모드, 용량 초과 등) 시 조용히 무시
-  }
+  userPostsStorage.save(userPosts);
 }
 
 function loadNickname() {
