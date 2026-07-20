@@ -253,9 +253,11 @@ function onDragMove(event) {
 function onDragEnd(event) {
   if (!dragState || event.pointerId !== dragState.pointerId) return;
   const { card, dx, moved } = dragState;
-  card.releasePointerCapture(event.pointerId);
   cleanupDragListeners(card);
   dragState = null;
+  if (card.hasPointerCapture(event.pointerId)) {
+    card.releasePointerCapture(event.pointerId);
+  }
 
   if (moved && Math.abs(dx) > DRAG_THRESHOLD) {
     shiftCard(dx > 0 ? "like" : "nope", card);
