@@ -42,12 +42,25 @@
 | `src/utils.js` | DOM과 분리 가능한 공용 순수 함수(XSS 방지, 쿨다운, 민감어/전화번호/위치 힌트 필터, 댓글 신고 식별자 등) |
 | `src/styles.css` | 다크 글래스 무드, 라임 포인트, safe-area, 바텀시트 등 전체 스타일과 CSS 변수 |
 | `src/*.test.mjs` | `node:test` 기반 유틸리티/데이터 shape 단위 테스트 |
+| `e2e/*.spec.js` | Playwright 기반 브라우저 E2E 테스트 (`src/app.js`의 DOM/localStorage 흐름 검증) |
+
+## E2E 테스트 (Playwright)
+
+`src/app.js`는 DOM에 강하게 의존해서 `node:test` 단위 테스트로 커버할 수 없습니다. 대신 `e2e/smoke.spec.js`가 실제 브라우저를 띄워서 차단/숨김/투표/알림닫기 등의 새로고침 영속성, 드래그 스와이프, 댓글 작성 흐름을 검증합니다. 이 저장소의 유일한 npm 의존성(`@playwright/test`)이며, 순수 프론트엔드 코드 자체에는 여전히 새 의존성을 추가하지 않습니다.
+
+```bash
+npx playwright install chromium   # 최초 1회
+npm run test:e2e
+```
+
+새 UI 흐름을 추가하거나 기존 흐름의 상태 관리(특히 localStorage 영속화)를 바꿀 때는 `e2e/smoke.spec.js`에 시나리오를 추가하거나 갱신해주세요.
 
 ## 검증
 
 ```bash
 npm run check
 npm test
+npm run test:e2e
 ```
 
 ## 커밋 메시지

@@ -119,6 +119,8 @@ npm run dev
 ```bash
 npm run check
 npm test
+npx playwright install chromium   # 최초 1회
+npm run test:e2e
 ```
 
 ## 프로젝트 구조
@@ -127,6 +129,7 @@ npm test
 .
 ├── index.html
 ├── manifest.webmanifest
+├── playwright.config.js
 ├── src/
 │   ├── app.js
 │   ├── data.js
@@ -136,6 +139,8 @@ npm test
 │   ├── utils.js
 │   ├── utils.test.mjs
 │   └── styles.css
+├── e2e/
+│   └── smoke.spec.js
 ├── assets/
 │   ├── favicon.svg
 │   ├── readme-cover.svg
@@ -161,6 +166,8 @@ npm test
 | `tmi-nearby:reportedIds` | 이미 신고한 게시물 ID 목록(중복 신고 방지) |
 | `tmi-nearby:reportedComments` | 이미 신고한 댓글 식별자(`${postId}-${commentIndex}`) 목록(중복 신고 방지) |
 | `tmi-nearby:reportedAuthors` | 이미 신고한 작성자(익명 닉네임) 목록(중복 신고 방지) |
+| `tmi-nearby:votedOptions` | 게시물별 투표 결과([postId, optionIndex] 목록, 중복 투표 방지) |
+| `tmi-nearby:dismissedNotices` | 닫은 알림 식별자 목록(새로고침해도 다시 안 뜨게) |
 | `tmi-nearby:nickname` | 24시간마다 회전하는 익명 닉네임과 배정 시각 |
 
 ## 앞으로 붙이면 좋은 기능

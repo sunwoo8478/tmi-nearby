@@ -40,6 +40,6 @@
 
 ## 6. 다음 후보
 
-- (완료) 자동화 테스트 커버리지 확대 — geo.js, utils.js, data.js 3개 파일, 75개 테스트로 확장. app.js 자체는 DOM 의존적이라 순수 로직만 utils.js로 계속 분리해 커버
+- (완료) 자동화 테스트 커버리지 확대 — geo.js, utils.js, data.js 3개 파일, 75개 단위 테스트 + Playwright E2E 스모크 테스트(`e2e/smoke.spec.js`, 7개 시나리오)로 DOM/localStorage 흐름까지 커버
 - docs/BACKEND.md 설계를 실제 API 구현으로 전환
 - 실시간 알림/카드 수신 서버 연동
