@@ -59,6 +59,39 @@ describe("haversineDistanceMeters", () => {
     const b = haversineDistanceMeters(35.1796, 129.0756, 37.5665, 126.978);
     assert.ok(Math.abs(a - b) < 1e-6);
   });
+
+  test("returns half the earth's circumference for pole-to-pole (latitude extremes)", () => {
+    const expected = EARTH_RADIUS_METERS * Math.PI;
+    const actual = haversineDistanceMeters(90, 0, -90, 0);
+    assert.ok(Math.abs(actual - expected) < 1e-6, `expected ~${expected}m, got ${actual}m`);
+  });
+
+  test("returns 0 between two points at the same pole regardless of longitude", () => {
+    const actual = haversineDistanceMeters(90, -170, 90, 165);
+    assert.ok(Math.abs(actual) < 1e-6, `expected ~0m, got ${actual}m`);
+  });
+
+  test("returns half the earth's circumference for antipodal equatorial points (longitude extremes)", () => {
+    const expected = EARTH_RADIUS_METERS * Math.PI;
+    const actual = haversineDistanceMeters(0, -180, 0, 0);
+    assert.ok(Math.abs(actual - expected) < 1e-6, `expected ~${expected}m, got ${actual}m`);
+  });
+
+  test("treats crossing the antimeridian as a short distance, not the long way around", () => {
+    // 179° and -179° are 2 degrees apart across the date line, not 358 degrees.
+    const short = haversineDistanceMeters(0, 179, 0, -179);
+    const twoDegrees = EARTH_RADIUS_METERS * toRadians(2);
+    assert.ok(Math.abs(short - twoDegrees) < 1e-6, `expected ~${twoDegrees}m, got ${short}m`);
+  });
+
+  test("handles negative latitude/longitude coordinates (southern/western hemisphere)", () => {
+    // Sydney -> Buenos Aires, both negative lat/lng.
+    const sydney = { lat: -33.8688, lng: 151.2093 };
+    const buenosAires = { lat: -34.6037, lng: -58.3816 };
+    const actual = haversineDistanceMeters(sydney.lat, sydney.lng, buenosAires.lat, buenosAires.lng);
+    const reference = lawOfCosinesDistanceMeters(sydney.lat, sydney.lng, buenosAires.lat, buenosAires.lng);
+    assert.ok(Math.abs(actual - reference) < 1, `expected close to ${reference}m, got ${actual}m`);
+  });
 });
 
 describe("formatDistanceMeters", () => {
@@ -121,5 +154,24 @@ describe("assignNearbyCoordinate", () => {
       samples.add(`${lat},${lng}`);
     }
     assert.ok(samples.size > 1, "expected random samples to differ");
+  });
+
+  test("stays within radius and keeps latitude in range when centered at the north pole", () => {
+    for (let i = 0; i < 200; i++) {
+      const { lat, lng } = assignNearbyCoordinate(90, 0, 500);
+      const distance = haversineDistanceMeters(90, 0, lat, lng);
+      assert.ok(distance <= 500 + 1e-6, `sample ${i}: distance ${distance}m exceeded radius`);
+      assert.ok(lat >= -90 && lat <= 90, `lat ${lat} out of range`);
+      assert.ok(lng >= -180 && lng <= 180, `lng ${lng} out of range`);
+    }
+  });
+
+  test("stays within radius when centered at the south pole", () => {
+    for (let i = 0; i < 200; i++) {
+      const { lat, lng } = assignNearbyCoordinate(-90, 0, 500);
+      const distance = haversineDistanceMeters(-90, 0, lat, lng);
+      assert.ok(distance <= 500 + 1e-6, `sample ${i}: distance ${distance}m exceeded radius`);
+      assert.ok(lat >= -90 && lat <= 90, `lat ${lat} out of range`);
+    }
   });
 });

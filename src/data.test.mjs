@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { posts, notices, myPosts } from "./data.js";
 
 describe("posts data", () => {
+  test("is a non-empty array", () => {
+    assert.ok(Array.isArray(posts), "posts should be an array");
+    assert.ok(posts.length > 0, "posts should not be empty");
+  });
+
   test("uses unique ids for every post", () => {
     const ids = posts.map(({ id }) => id);
     assert.equal(new Set(ids).size, ids.length);
@@ -54,6 +59,11 @@ describe("posts data", () => {
 });
 
 describe("supplementary data", () => {
+  test("notices and myPosts are non-empty arrays", () => {
+    assert.ok(Array.isArray(notices) && notices.length > 0, "notices should not be empty");
+    assert.ok(Array.isArray(myPosts) && myPosts.length > 0, "myPosts should not be empty");
+  });
+
   test("stores notices as [icon, text, time] string tuples", () => {
     for (const notice of notices) {
       assert.ok(Array.isArray(notice));
