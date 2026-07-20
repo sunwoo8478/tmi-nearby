@@ -36,11 +36,12 @@
 
 | 파일 | 역할 |
 | --- | --- |
-| `src/app.js` | 화면 렌더링과 사용자 인터랙션 |
+| `src/app.js` | 화면 렌더링, 사용자 인터랙션, localStorage 영속화(작성 글/숨김/차단/신고/투표/알림닫기/닉네임 9개 키) |
 | `src/data.js` | mock 게시물, 알림, 내 글 데이터 |
 | `src/geo.js` | 위치, 거리 계산 유틸리티 |
-| `src/utils.js` | DOM과 분리 가능한 공용 순수 함수 |
-| `src/*.test.mjs` | `node:test` 기반 유틸리티 테스트 |
+| `src/utils.js` | DOM과 분리 가능한 공용 순수 함수(XSS 방지, 쿨다운, 민감어/전화번호/위치 힌트 필터, 댓글 신고 식별자 등) |
+| `src/styles.css` | 다크 글래스 무드, 라임 포인트, safe-area, 바텀시트 등 전체 스타일과 CSS 변수 |
+| `src/*.test.mjs` | `node:test` 기반 유틸리티/데이터 shape 단위 테스트 |
 
 ## 검증
 
