@@ -37,6 +37,7 @@ TMI Nearby는 밝은 커뮤니티 앱보다 어두운 모바일 피드에 가깝
 | Warning surface | `rgba(255,92,92,0.14)` | 작성 경고 배너 |
 | Warning border | `rgba(255,92,92,0.4)` | 작성 경고 배너 테두리 |
 | Toast surface | `rgba(12,12,15,0.96)` | 숨김, 신고, 차단 안내 토스트 |
+| Muted | `rgba(255,255,255,0.52)` | 보조 텍스트, 댓글 신고 버튼 |
 | Text | `#f7f7f7` | 주요 텍스트 |
 
 ## Interaction tone
