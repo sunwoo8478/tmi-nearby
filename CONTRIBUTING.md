@@ -43,6 +43,7 @@
 | `src/styles.css` | 다크 글래스 무드, 라임 포인트, safe-area, 바텀시트 등 전체 스타일과 CSS 변수 |
 | `src/*.test.mjs` | `node:test` 기반 유틸리티/데이터 shape 단위 테스트 |
 | `e2e/*.spec.js` | Playwright 기반 브라우저 E2E 테스트 (`src/app.js`의 DOM/localStorage 흐름 검증) |
+| `server/` | `docs/BACKEND.md` API를 실제 구현한 백엔드 후보 서버 (Node 내장 http + node:sqlite, 프론트와 미연동) |
 
 ## E2E 테스트 (Playwright)
 
@@ -55,12 +56,26 @@ npm run test:e2e
 
 새 UI 흐름을 추가하거나 기존 흐름의 상태 관리(특히 localStorage 영속화)를 바꿀 때는 `e2e/smoke.spec.js`에 시나리오를 추가하거나 갱신해주세요.
 
+## 백엔드 후보 서버 (`server/`)
+
+`docs/BACKEND.md`에 설계로만 있던 API를 `server/`에 실제로 구현했습니다. 새 npm 의존성 없이 Node 내장 `http`와 `node:sqlite`(`DatabaseSync`)만 사용하고, SQLite 파일로 영속 저장합니다. **`src/app.js`는 아직 이 서버를 호출하지 않습니다** — 지금은 독립된 별개 구현이고, 프론트-백엔드 연동은 별도 작업입니다.
+
+`node:sqlite`는 Node 22.x에서 `--experimental-sqlite` 플래그가 필요해서, 서버 관련 스크립트에서만 이 플래그를 명시합니다 (`src/*.test.mjs`를 돌리는 `npm test`에는 영향 없음).
+
+```bash
+npm run server        # 로컬 실행 (기본 포트 8787)
+npm run test:server   # server/*.test.mjs
+```
+
+`server/`를 수정할 때는 `src/utils.js`/`src/geo.js`의 순수 함수(민감어 필터, 쿨다운, 거리 계산 등)를 재사용하고 중복 구현하지 마세요 — 상수(`BAD_WORDS` 등)만 `server/constants.js`에 별도로 둡니다 (`src/app.js`가 export하지 않아서 불가피한 중복입니다).
+
 ## 검증
 
 ```bash
 npm run check
 npm test
 npm run test:e2e
+npm run test:server
 ```
 
 ## 커밋 메시지

@@ -2,6 +2,8 @@
 
 TMI Nearby가 정적 프로토타입에서 실제 서비스로 확장된다면, 현재의 mock data와 localStorage 상태는 익명 세션 기반 API와 데이터베이스로 이동합니다. 이 문서는 `users`, `posts`, `votes`, `locations` 후보 구조를 기준으로 필요한 백엔드 API를 정리합니다.
 
+> **구현 상태**: 이 문서에 정리된 API가 `server/`에 실제로 구현되어 있습니다 (Node 내장 `http` + `node:sqlite`, 새 npm 의존성 없음). 다만 **프론트엔드(`src/app.js`)는 아직 이 서버를 호출하지 않고** 지금처럼 localStorage 기반으로 그대로 동작합니다 — 서버 구현과 프론트엔드 연동은 별개 작업입니다. 실행: `npm run server`, 테스트: `npm run test:server`.
+
 > 이 문서의 엔드포인트는 현재 프론트엔드(`src/app.js`)에서 localStorage로 구현된 기능을 서버로 옮길 때의 설계입니다. 클라이언트의 실제 키 이름과 동작(차단·숨김·신고·닉네임 회전)과 일치하도록 맞춰져 있습니다.
 
 ## 기본 방향

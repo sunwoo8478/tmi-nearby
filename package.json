@@ -9,6 +9,8 @@
     "check": "node --check src/app.js",
     "test": "node --test src/*.test.mjs",
     "test:e2e": "playwright test",
+    "server": "node --experimental-sqlite server/index.js",
+    "test:server": "node --experimental-sqlite --test server/*.test.mjs",
     "cn:glm": "/Users/sw/.npm-global/bin/cn --config ./continue-glm.yaml"
   },
   "keywords": [
