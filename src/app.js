@@ -586,8 +586,17 @@ function submitComment(event) {
 }
 
 function openCompose() {
+  resetComposeForm();
   $("#composeSheet").showModal();
   $("#composeInput").focus();
+}
+
+function resetComposeForm() {
+  const warn = $("#composeWarn");
+  $("#composeInput").value = "";
+  warn.textContent = "";
+  warn.hidden = true;
+  clearTimeout(composeWarnTimer);
 }
 
 function showComposeWarn(message) {
@@ -638,8 +647,7 @@ function submitCompose(event) {
   feed.unshift(item);
   userPosts.unshift(item);
   saveUserPosts();
-  $("#composeInput").value = "";
-  $("#composeWarn").hidden = true;
+  resetComposeForm();
   $("#composeSheet").close();
   renderFeed();
   renderMyPosts();
