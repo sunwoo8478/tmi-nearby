@@ -609,6 +609,7 @@ function submitComment(event) {
   }
 
   activeDetailPost.comments.push([currentNickname, value]);
+  if (userPosts.includes(activeDetailPost)) saveUserPosts();
   input.value = "";
   renderDetail(activeDetailPost);
   renderFeed();
