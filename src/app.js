@@ -17,6 +17,7 @@ const BLOCKED_AUTHORS_STORAGE_KEY = "tmi-nearby:blockedAuthors";
 const REPORTED_IDS_STORAGE_KEY = "tmi-nearby:reportedIds";
 const REPORTED_COMMENTS_STORAGE_KEY = "tmi-nearby:reportedComments";
 const REPORTED_AUTHORS_STORAGE_KEY = "tmi-nearby:reportedAuthors";
+const VOTED_OPTIONS_STORAGE_KEY = "tmi-nearby:votedOptions";
 const NICKNAME_STORAGE_KEY = "tmi-nearby:nickname";
 const NICKNAME_TTL_MS = 24 * 60 * 60 * 1000;
 const NICKNAME_CANDIDATES = ["라쿤", "사과", "고양이", "복숭아", "너구리", "두더지", "라임", "새우", "밤", "별", "연필", "봄"];
@@ -47,6 +48,10 @@ const blockedAuthorsStorage = createArrayStorage(BLOCKED_AUTHORS_STORAGE_KEY, (a
 const reportedIdsStorage = createArrayStorage(REPORTED_IDS_STORAGE_KEY, (id) => typeof id !== "undefined");
 const reportedCommentsStorage = createArrayStorage(REPORTED_COMMENTS_STORAGE_KEY, (id) => typeof id === "string");
 const reportedAuthorsStorage = createArrayStorage(REPORTED_AUTHORS_STORAGE_KEY, (author) => typeof author === "string");
+const votedOptionsStorage = createArrayStorage(
+  VOTED_OPTIONS_STORAGE_KEY,
+  (entry) => Array.isArray(entry) && entry.length === 2 && typeof entry[0] === "number" && typeof entry[1] === "number",
+);
 
 let userPosts = loadUserPosts();
 let hiddenIds = hiddenIdsStorage.load();
@@ -58,7 +63,7 @@ let currentNickname = `익명의 ${resolveNickname()}`;
 let feed = createFeed();
 let composeType = "tmi";
 let activeDetailPost = null;
-let votedOptions = new Map();
+let votedOptions = new Map(votedOptionsStorage.load());
 
 const DRAG_THRESHOLD = 100;
 let dragState = null;
@@ -195,6 +200,7 @@ function submitVote(button) {
   const postId = Number(button.dataset.votePost);
   if (votedOptions.has(postId)) return;
   votedOptions.set(postId, Number(button.dataset.voteOption));
+  votedOptionsStorage.save([...votedOptions]);
   renderFeed();
 }
 
