@@ -213,6 +213,10 @@ describe("containsLocationHint", () => {
     assert.equal(containsLocationHint("1호차에 있어요"), false);
   });
 
+  test("still flags a room number (호실) as a location hint", () => {
+    assert.equal(containsLocationHint("301호실에 있어요"), true);
+  });
+
   test("returns false for an empty string", () => {
     assert.equal(containsLocationHint(""), false);
   });
