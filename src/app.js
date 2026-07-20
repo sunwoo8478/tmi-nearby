@@ -15,6 +15,7 @@ const HIDDEN_IDS_STORAGE_KEY = "tmi-nearby:hiddenIds";
 const BLOCKED_AUTHORS_STORAGE_KEY = "tmi-nearby:blockedAuthors";
 const REPORTED_IDS_STORAGE_KEY = "tmi-nearby:reportedIds";
 const REPORTED_COMMENTS_STORAGE_KEY = "tmi-nearby:reportedComments";
+const REPORTED_AUTHORS_STORAGE_KEY = "tmi-nearby:reportedAuthors";
 const NICKNAME_STORAGE_KEY = "tmi-nearby:nickname";
 const NICKNAME_TTL_MS = 24 * 60 * 60 * 1000;
 const NICKNAME_CANDIDATES = ["라쿤", "사과", "고양이", "복숭아", "너구리", "두더지", "라임", "새우", "밤", "별", "연필", "봄"];
@@ -24,6 +25,7 @@ let hiddenIds = loadHiddenIds();
 let blockedAuthors = loadBlockedAuthors();
 let reportedIds = loadReportedIds();
 let reportedComments = loadReportedComments();
+let reportedAuthors = loadReportedAuthors();
 let currentNickname = `익명의 ${resolveNickname()}`;
 let feed = createFeed();
 let composeType = "tmi";
@@ -136,6 +138,24 @@ function loadReportedComments() {
 function saveReportedComments() {
   try {
     localStorage.setItem(REPORTED_COMMENTS_STORAGE_KEY, JSON.stringify(reportedComments));
+  } catch {
+    // localStorage 사용 불가 시 조용히 무시
+  }
+}
+
+function loadReportedAuthors() {
+  try {
+    const value = localStorage.getItem(REPORTED_AUTHORS_STORAGE_KEY);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed.filter((author) => typeof author === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveReportedAuthors() {
+  try {
+    localStorage.setItem(REPORTED_AUTHORS_STORAGE_KEY, JSON.stringify(reportedAuthors));
   } catch {
     // localStorage 사용 불가 시 조용히 무시
   }
@@ -327,9 +347,12 @@ function openCardMenu(button) {
   menu.dataset.cardMenu = "1";
   const postId = Number(id);
   const alreadyReported = reportedIds.includes(postId);
+  const post = feed.find((item) => item.id === postId);
+  const alreadyReportedAuthor = post ? reportedAuthors.includes(post.who) : false;
   menu.innerHTML = `
     <button type="button" data-action="hide">숨기기</button>
     <button type="button" data-action="report" ${alreadyReported ? "disabled" : ""}>${alreadyReported ? "신고 완료" : "신고하기"}</button>
+    <button type="button" data-action="report-author" ${alreadyReportedAuthor ? "disabled" : ""}>${alreadyReportedAuthor ? "작성자 신고 완료" : "작성자 신고하기"}</button>
     <button type="button" data-action="block">차단하기</button>
   `;
 
@@ -341,6 +364,7 @@ function openCardMenu(button) {
     closeCardMenu();
     if (action === "hide") hidePost(id);
     else if (action === "report") reportPost(id);
+    else if (action === "report-author") reportAuthor(id);
     else if (action === "block") blockAuthor(id);
   });
 
@@ -398,6 +422,20 @@ function reportPost(id) {
   reportedIds.push(postId);
   saveReportedIds();
   showToast("신고가 접수됐어요");
+}
+
+function reportAuthor(id) {
+  const postId = Number(id);
+  const post = feed.find((item) => item.id === postId);
+  if (!post) return;
+  const author = post.who;
+  if (reportedAuthors.includes(author)) {
+    showToast("이미 신고한 작성자예요");
+    return;
+  }
+  reportedAuthors.push(author);
+  saveReportedAuthors();
+  showToast(`${author}님을 신고했어요`);
 }
 
 function getCommentReportId(postId, commentIndex) {
