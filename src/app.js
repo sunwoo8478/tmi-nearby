@@ -148,6 +148,7 @@ function createActiveNotices() {
 }
 
 function renderFeed() {
+  closeCardMenu();
   cardStack.innerHTML = "";
   feedEmpty.hidden = feed.length > 0;
   cardStack.hidden = feed.length === 0;
