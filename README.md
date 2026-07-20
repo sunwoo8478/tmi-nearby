@@ -130,8 +130,11 @@ npm test
 ├── src/
 │   ├── app.js
 │   ├── data.js
+│   ├── data.test.mjs
 │   ├── geo.js
 │   ├── geo.test.mjs
+│   ├── utils.js
+│   ├── utils.test.mjs
 │   └── styles.css
 ├── assets/
 │   ├── favicon.svg
